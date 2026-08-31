@@ -1,0 +1,1248 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>business ⚡</title>
+
+  <!-- Google Fonts & Material Icons -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Montserrat:wght@300;400;600;700&display=swap">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green: #00ff41;
+      --green-dim: #00aa2a;
+      --green-glow: rgba(0,255,65,0.25);
+      --red: #ff3333;
+    }
+
+    body {
+      background: #ffffff;
+      color: #202124;
+      font-family: 'Montserrat', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      margin: 0;
+      user-select: none;
+    }
+
+    /* Matrix canvas for Subgate */
+    #matrix {
+      position: fixed;
+      inset: 0;
+      opacity: 0.15;
+      z-index: 0;
+      background: #000000;
+    }
+
+    /* SUBGATE STYLES */
+    .gate-overlay { background-color: #000000; }
+    .gate {
+      position: relative;
+      z-index: 10;
+      width: 90%;
+      max-width: 440px;
+      background: rgba(0,0,0,0.92);
+      border: 1px solid var(--green-dim);
+      box-shadow: 0 0 40px var(--green-glow), inset 0 0 40px rgba(0,255,65,0.03);
+      padding: 2rem 1.5rem;
+      animation: flicker 8s infinite;
+      min-height: 320px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      font-family: 'Share Tech Mono', monospace;
+      color: var(--green);
+    }
+
+    .gate::before, .gate::after {
+      content: '';
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-color: var(--green);
+      border-style: solid;
+    }
+    .gate::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+    .gate::after  { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+    .header { text-align: center; margin-bottom: 24px; }
+    .header .skull {
+      font-size: 32px;
+      display: block;
+      margin-bottom: 8px;
+      filter: drop-shadow(0 0 8px var(--green));
+    }
+    .header h1 {
+      font-family: 'Orbitron', monospace;
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      text-shadow: 0 0 10px var(--green);
+    }
+    .header .sub {
+      font-size: 12px;
+      color: var(--green-dim);
+      letter-spacing: 2px;
+      margin-top: 6px;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid var(--green-dim);
+      margin: 0 0 24px;
+      opacity: 0.4;
+    }
+
+    .cyber-btn {
+      display: block;
+      width: 100%;
+      margin-top: 16px;
+      background: transparent;
+      border: 1px solid var(--green);
+      color: var(--green);
+      font-family: 'Orbitron', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      padding: 16px 12px;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+
+    .cyber-btn:hover {
+      background: rgba(0,255,65,0.1);
+      box-shadow: 0 0 24px var(--green-glow);
+    }
+
+    .step { display: none; width: 100%; }
+    .step.active { display: block; }
+
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+    @keyframes flicker { 0%, 98%, 100% { opacity: 1; } 99% { opacity: 0.85; } }
+    .blink { animation: blink 1s step-end infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    .loading-bar {
+      width: 100%;
+      height: 2px;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      margin-top: 20px;
+      animation: pulse 1s infinite;
+    }
+
+    /* Profile Pic Circle Upload */
+    .avatar-upload {
+      position: relative;
+      margin: 0 auto 16px auto;
+      width: 84px;
+      height: 84px;
+      border-radius: 50%;
+      background-color: #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #1a73e8;
+    }
+    .avatar-upload img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .avatar-upload label {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      background: #1a73e8;
+      color: white;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: bold;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .avatar-upload input { display: none; }
+
+    /* GOOGLE SITES STYLING */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+      background-color: #ffffff;
+      border-bottom: 1px solid #dadce0;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      color: #202124;
+    }
+    .brand-left { display: flex; align-items: center; gap: 12px; }
+    .logo-icon { font-size: 26px; color: #1a73e8; }
+    .brand-title { font-size: 22px; font-weight: 500; color: #5f6368; }
+    .search-icon { font-size: 24px; color: #5f6368; cursor: pointer; }
+
+    .dashboard-content {
+      padding: 24px;
+      background-color: #ffffff;
+      color: #202124;
+      min-height: calc(100vh - 57px);
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .section-row { margin-bottom: 30px; }
+    .section-header { display: flex; align-items: center; gap: 4px; margin-bottom: 12px; }
+    .section-header h6 { font-size: 16px; font-weight: 600; color: #3c4043; text-transform: capitalize; }
+    .arrow-icon { color: #5f6368; }
+
+    .horizontal-scroll {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      padding-bottom: 10px;
+      scrollbar-width: thin;
+    }
+
+    .product-card {
+      min-width: 140px;
+      width: 140px;
+      height: 175px;
+      background-color: #ffffff;
+      border: 1px solid #dadce0;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+    }
+    .product-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .card-image {
+      width: 100%;
+      height: 95px;
+      background-color: #f1f3f4;
+      border-radius: 6px;
+      object-fit: cover;
+    }
+
+    .add-card {
+      border: 2px dashed #1a73e8;
+      background-color: #e8f0fe;
+      color: #1a73e8;
+      justify-content: center;
+    }
+    .add-icon { font-size: 38px; margin-bottom: 4px; }
+
+    .vertical-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 16px;
+    }
+
+    .image-upload-box {
+      width: 100%;
+      height: 120px;
+      border: 2px dashed #dadce0;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      background-color: #f8f9fa;
+      position: relative;
+      overflow: hidden;
+    }
+    .image-upload-box:hover { border-color: #1a73e8; background-color: #f1f3f4; }
+    .image-upload-box .material-icons { font-size: 36px; color: #5f6368; }
+    .image-upload-box img {
+      width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; display: none;
+    }
+  </style>
+</head>
+<body class="bg-white text-gray-900">
+
+  <!-- Matrix Background Canvas -->
+  <canvas id="matrix"></canvas>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-blue-600 text-white text-xs px-4 py-2.5 rounded-lg shadow-xl flex items-center gap-2">
+    <span class="material-icons text-sm">info</span>
+    <span id="toast-text">Notice</span>
+  </div>
+
+  <!-- 1. SUB GATE CONTAINER -->
+  <div id="sub-gate-container" class="fixed inset-0 z-50 flex items-center justify-center gate-overlay p-4">
+    <div class="gate">
+      <div id="step-process" class="step active text-center">
+        <div class="header">
+          <span class="skull" style="animation: pulse 1s infinite;">⬡</span>
+          <h1>SYSTEM INIT</h1>
+          <div class="sub">Verifying Session...</div>
+        </div>
+        <div class="loading-bar"></div>
+      </div>
+
+      <div id="step1" class="step">
+        <div class="header">
+          <span class="skull" style="color: var(--red); filter: drop-shadow(0 0 8px var(--red));">⚠</span>
+          <h1 style="color: var(--red); text-shadow: 0 0 10px var(--red);">SUB TO ULTRA</h1>
+          <div class="sub">Subscription Required for Access</div>
+        </div>
+        <hr class="divider"/>
+        <button id="subBtn" class="cyber-btn" onclick="handleSubscribe()">
+          [ SUBSCRIBE TO UNLOCK ]<span class="blink">_</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. AUTHENTICATION MODAL -->
+  <div id="auth-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white border border-gray-200 rounded-2xl p-6 w-full max-w-sm text-center shadow-2xl">
+      <h2 class="text-xl font-bold text-gray-900 mb-4">Account Setup</h2>
+      
+      <div class="avatar-upload">
+        <img id="avatar-preview" src="https://via.placeholder.com/84?text=Profile" alt="Profile Preview">
+        <label for="profile-pic">+</label>
+        <input type="file" id="profile-pic" accept="image/*">
+      </div>
+
+      <input type="text" id="auth-username" minlength="2" maxlength="10" placeholder="Username (2-10 chars)" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-blue-500 mb-3 text-sm">
+      <input type="password" id="auth-password" minlength="5" maxlength="16" placeholder="Password (5-16 chars)" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-blue-500 mb-4 text-sm">
+      
+      <button id="auth-submit-btn" class="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 uppercase tracking-wide text-sm transition">Continue</button>
+      <div id="auth-msg" class="text-xs text-red-500 mt-3 min-h-[16px]"></div>
+    </div>
+  </div>
+
+  <!-- 3. MAIN DASHBOARD APP -->
+  <div id="main-app" class="hidden relative z-10 min-h-screen bg-white">
+    <header class="top-bar">
+      <div class="brand-left">
+        <div class="relative cursor-pointer" onclick="toggleChatDrawer()">
+          <span class="material-icons text-gray-600 hover:text-gray-900 text-2xl pt-1">menu</span>
+          <span id="unread-dot" class="hidden absolute top-0 right-0 w-2.5 h-2.5 bg-red-600 rounded-full border-2 border-white"></span>
+        </div>
+        <div class="flex items-center gap-2 cursor-pointer" onclick="showDashboardView()">
+          <span class="material-icons logo-icon">work</span>
+          <h1 class="brand-title">business</h1>
+        </div>
+      </div>
+      <div class="search-right">
+        <span class="material-icons search-icon">search</span>
+      </div>
+    </header>
+
+    <main id="dashboard-view" class="dashboard-content">
+      <!-- Your Products Row -->
+      <section class="section-row">
+        <div class="section-header">
+          <h6>Your</h6>
+          <span class="material-icons arrow-icon">chevron_right</span>
+        </div>
+        
+        <div class="horizontal-scroll" id="your-products-list">
+          <div class="product-card add-card" onclick="openCreateProductModal()">
+            <span class="material-icons add-icon">add_box</span>
+            <p class="text-xs font-semibold">Create</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Others Products Row -->
+      <section class="section-row">
+        <div class="section-header">
+          <h6>Others</h6>
+          <span class="material-icons arrow-icon">expand_more</span>
+        </div>
+        
+        <div class="vertical-grid" id="others-products-list"></div>
+      </section>
+    </main>
+
+    <!-- PRODUCT DETAIL VIEW -->
+    <div id="product-detail-view" class="hidden min-h-[calc(100vh-57px)] bg-white p-4 max-w-2xl mx-auto">
+      <div class="flex items-center gap-3 border-b border-gray-200 pb-3 mb-4">
+        <button onclick="showDashboardView()" class="p-1 hover:bg-gray-100 rounded-full transition">
+          <span class="material-icons text-gray-700">arrow_back</span>
+        </button>
+        <h2 class="text-lg font-bold text-gray-800" id="detail-nav-title">Product Details</h2>
+      </div>
+
+      <div class="space-y-4">
+        <img id="detail-img" src="" alt="Product Photo" class="w-full max-h-80 object-cover rounded-xl border border-gray-200 bg-gray-50">
+        <div class="flex items-start justify-between gap-4">
+          <h1 id="detail-title" class="text-2xl font-bold text-gray-900"></h1>
+          <span id="detail-price" class="text-xl font-bold text-green-600 bg-green-50 px-3 py-1 rounded-lg border border-green-200 whitespace-nowrap"></span>
+        </div>
+        <p id="detail-desc" class="text-gray-600 text-sm leading-relaxed"></p>
+
+        <div class="flex items-center justify-between bg-gray-50 border border-gray-200 p-4 rounded-xl mt-6">
+          <div class="flex items-center gap-3">
+            <img id="detail-owner-avatar" src="https://via.placeholder.com/48" class="w-12 h-12 rounded-full object-cover border border-gray-300">
+            <div>
+              <p class="text-xs text-gray-500 font-medium">Listed by</p>
+              <h4 id="detail-owner-username" class="font-bold text-gray-900 text-base"></h4>
+            </div>
+          </div>
+          <button id="detail-chat-btn" onclick="openDirectChat()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-semibold text-sm transition">
+            Chat
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DIRECT CHAT VIEW -->
+    <div id="direct-chat-view" class="hidden min-h-[calc(100vh-57px)] flex flex-col bg-white max-w-2xl mx-auto w-full">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white sticky top-[57px] z-30">
+        <div class="flex items-center gap-3">
+          <button onclick="showDashboardView()" class="p-1 hover:bg-gray-100 rounded-full">
+            <span class="material-icons text-gray-700">arrow_back</span>
+          </button>
+          <img id="chat-header-avatar" src="https://via.placeholder.com/40" class="w-10 h-10 rounded-full object-cover border border-gray-300">
+          <h3 id="chat-header-username" class="font-bold text-gray-900 text-base"></h3>
+        </div>
+
+        <div class="relative">
+          <button onclick="toggleChatOptionsMenu()" class="p-1 text-gray-600 hover:text-gray-900 rounded-full">
+            <span class="material-icons">more_vert</span>
+          </button>
+          <div id="chat-options-menu" class="hidden absolute right-0 top-10 bg-white border border-gray-200 shadow-lg rounded-lg py-1 w-32 z-50">
+            <button onclick="blockCurrentUser()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium">
+              Block
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="chat-messages-container" class="flex-1 p-4 space-y-3 overflow-y-auto bg-gray-50"></div>
+
+      <div id="chat-bottom-bar" class="p-3 border-t border-gray-200 bg-white flex items-center gap-2">
+        <label for="chat-media-input" class="p-2 text-gray-500 hover:text-blue-600 cursor-pointer rounded-full hover:bg-gray-100">
+          <span class="material-icons">add</span>
+        </label>
+        <input type="file" id="chat-media-input" accept="image/*,video/*" class="hidden" onchange="handleMediaSelect(event)">
+        <input type="text" id="chat-input-text" placeholder="Type a message..." class="flex-1 bg-gray-100 border border-gray-200 rounded-full px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 text-gray-900">
+        <button onclick="sendMessage()" class="bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-full flex items-center justify-center transition">
+          <span class="material-icons text-sm">send</span>
+        </button>
+      </div>
+
+      <div id="chat-blocked-bar" class="hidden p-3 border-t border-gray-200 bg-gray-100 flex items-center justify-between px-6">
+        <span class="text-xs text-gray-500 font-medium">You have blocked this user.</span>
+        <button onclick="unblockCurrentUser()" class="text-blue-600 hover:underline font-bold text-sm">Unblock</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. CREATE / EDIT PRODUCT MODAL -->
+  <div id="create-product-modal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl p-6 w-full max-w-md text-gray-800 shadow-2xl">
+      <h2 class="text-xl font-bold mb-4 text-gray-900" id="prod-modal-title">Create Product</h2>
+
+      <div class="mb-3 text-left">
+        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Product Name *</label>
+        <input type="text" id="prod-name-input" minlength="2" maxlength="8" placeholder="2-8 characters" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500">
+      </div>
+
+      <div class="grid grid-cols-3 gap-2 mb-3 text-left">
+        <div class="col-span-1">
+          <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Currency *</label>
+          <select id="prod-currency-input" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500 bg-white">
+            <option value="৳ TK">৳ TK (BD)</option>
+            <option value="$ USD">$ USD</option>
+            <option value="€ EUR">€ EUR</option>
+            <option value="£ GBP">£ GBP</option>
+            <option value="₹ INR">₹ INR</option>
+          </select>
+        </div>
+        <div class="col-span-2">
+          <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Price *</label>
+          <input type="number" id="prod-price-input" min="0" step="any" placeholder="e.g. 500" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500">
+        </div>
+      </div>
+
+      <div class="mb-3 text-left">
+        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Description (Optional)</label>
+        <textarea id="prod-desc-input" minlength="10" maxlength="500" placeholder="10-500 characters..." class="w-full border border-gray-300 rounded-lg p-2.5 text-sm h-20 resize-none focus:outline-none focus:border-blue-500"></textarea>
+      </div>
+
+      <div class="mb-5 text-left">
+        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Product Photo</label>
+        <label for="prod-photo-input" class="image-upload-box">
+          <span class="material-icons">add_box</span>
+          <span class="text-xs text-gray-500 mt-1">Add Photo</span>
+          <img id="prod-photo-preview" alt="Preview">
+        </label>
+        <input type="file" id="prod-photo-input" accept="image/*" class="hidden">
+      </div>
+
+      <div class="flex items-center justify-end gap-4">
+        <button onclick="closeCreateProductModal()" class="text-blue-600 hover:underline text-sm font-medium">Cancel</button>
+        <button id="save-prod-btn" onclick="saveProduct()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition">Save</button>
+      </div>
+      <div id="create-status" class="text-xs text-red-500 mt-3 text-center min-h-[16px]"></div>
+    </div>
+  </div>
+
+  <!-- 5. TAP & HOLD ACTION MODAL (EDIT / DELETE) -->
+  <div id="product-actions-modal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl p-6 w-full max-w-xs text-center shadow-2xl space-y-4">
+      <h3 class="text-base font-bold text-gray-800" id="action-modal-title">Product Options</h3>
+      
+      <div class="grid grid-cols-2 gap-3">
+        <button onclick="triggerEditProduct()" class="bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 font-bold py-3 px-4 rounded-xl flex flex-col items-center justify-center transition">
+          <span class="material-icons mb-1">edit</span>
+          Edit
+        </button>
+        <button onclick="triggerDeleteProduct()" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold py-3 px-4 rounded-xl flex flex-col items-center justify-center transition">
+          <span class="material-icons mb-1">delete</span>
+          Delete
+        </button>
+      </div>
+
+      <button onclick="closeActionsModal()" class="w-full text-gray-500 text-xs font-semibold py-2 hover:underline">Cancel</button>
+    </div>
+  </div>
+
+  <!-- 6. SIDE CHAT DRAWER -->
+  <div id="chat-drawer" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex">
+    <div class="bg-white w-80 max-w-[80vw] h-full shadow-2xl flex flex-col p-4 border-r border-gray-200">
+      <div class="flex justify-between items-center pb-3 border-b border-gray-200 mb-4">
+        <h2 class="text-xl font-bold text-gray-900">Chat</h2>
+        <button onclick="toggleChatDrawer()" class="p-1 text-gray-500 hover:text-gray-900">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+
+      <div class="relative mb-4">
+        <span class="material-icons absolute left-3 top-2.5 text-gray-400 text-lg">search</span>
+        <input type="text" id="search-chat-account" onkeyup="filterChats()" placeholder="Search account..." class="w-full pl-9 pr-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500">
+      </div>
+
+      <div id="recent-chats-list" class="flex-1 overflow-y-auto space-y-2"></div>
+    </div>
+    <div class="flex-1" onclick="toggleChatDrawer()"></div>
+  </div>
+
+  <!-- Firebase Modular SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, collection, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const text = document.getElementById('toast-text');
+      text.innerText = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 4000);
+    }
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAl6lrwDd_DbL5jINzVzC-Q_NuQXLHHiNU",
+      authDomain: "buisness-57a16.firebaseapp.com",
+      projectId: "buisness-57a16",
+      storageBucket: "buisness-57a16.firebasestorage.app",
+      messagingSenderId: "942846250014",
+      appId: "1:942846250014:web:0c333f3de02de6e8c0320f"
+    };
+
+    let app, auth, db;
+    try {
+      app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      db = getFirestore(app);
+    } catch (e) {
+      console.warn("Firebase Init fallback:", e);
+    }
+
+    let activeUser = null;
+    let activeUserData = { username: "User", photoURL: "https://via.placeholder.com/84" };
+    let selectedProfilePicBase64 = "";
+    let selectedProductPhotoBase64 = "";
+    let editingProductId = null;
+    let targetActionProduct = null;
+    
+    // Pure user data state (no extra generic tech/car mockups)
+    let productsList = JSON.parse(localStorage.getItem('app_products_db') || 'null') || [
+      {
+        id: "prod_tom_1",
+        name: "Suitcase",
+        price: "12000",
+        currency: "৳ TK",
+        description: "High quality travel suitcase for business trips.",
+        photoURL: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=400&q=80",
+        userId: "tom_id",
+        username: "Tom",
+        userPhoto: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80"
+      }
+    ];
+
+    let currentSelectedProduct = null;
+    let currentChatRecipient = null;
+    let chatThreads = JSON.parse(localStorage.getItem('app_chat_threads') || '{}');
+    let blockedUsers = JSON.parse(localStorage.getItem('app_blocked_users') || '[]');
+    let attachmentMediaBase64 = "";
+
+    // Matrix Rain Effect Setup
+    const canvas = document.getElementById('matrix');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    let cols = Math.floor(canvas.width / 18);
+    let drops = Array(cols).fill(1);
+    const chars = '01100';
+    
+    function drawMatrix() {
+      ctx.fillStyle = 'rgba(0,0,0,0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#00ff41';
+      ctx.font = '14px Share Tech Mono';
+      drops.forEach((y, i) => {
+        const ch = chars[Math.floor(Math.random() * chars.length)];
+        ctx.fillText(ch, i * 18, y * 18);
+        if (y * 18 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      });
+    }
+    const matrixInterval = setInterval(drawMatrix, 50);
+
+    // SUBGATE CONTROLLER
+    window.onload = function() {
+      setTimeout(() => {
+        let scannedGmail = localStorage.getItem('user_gmail');
+        if (scannedGmail) {
+          hideSubgate();
+          checkAuthStatus();
+        } else {
+          showStep('step1');
+        }
+      }, 1500);
+    };
+
+    function showStep(id) {
+      document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    function hideSubgate() {
+      document.getElementById('sub-gate-container').classList.add('hidden');
+      document.getElementById('matrix').classList.add('hidden');
+      clearInterval(matrixInterval);
+    }
+
+    window.handleSubscribe = function() {
+      window.open('https://www.youtube.com/@Ultra-wk8ed', '_blank');
+      const btn = document.getElementById('subBtn');
+      btn.innerHTML = "[ CHECKING... ]<span class='blink'>_</span>";
+      btn.classList.add('disabled');
+      
+      setTimeout(() => {
+        let autoGmail = `user_${Math.random().toString(36).substring(2, 9)}@gmail.com`;
+        localStorage.setItem('user_gmail', autoGmail);
+        hideSubgate();
+        checkAuthStatus();
+      }, 2000);
+    };
+
+    // AUTH CONTROLLER
+    function checkAuthStatus() {
+      if (!auth) {
+        initLocalSession();
+        return;
+      }
+
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          activeUser = user;
+          const savedMeta = JSON.parse(localStorage.getItem(`user_meta_${user.uid}`) || 'null');
+          if (savedMeta) {
+            activeUserData = savedMeta;
+          } else {
+            activeUserData = {
+              username: user.email ? user.email.split('@')[0] : "Timmy",
+              photoURL: selectedProfilePicBase64 || "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=150&q=80"
+            };
+          }
+          document.getElementById('auth-modal').classList.add('hidden');
+          document.getElementById('main-app').classList.remove('hidden');
+          loadDashboardProducts();
+          checkUnreadMessages();
+        } else {
+          document.getElementById('auth-modal').classList.remove('hidden');
+        }
+      });
+    }
+
+    function initLocalSession() {
+      const localUid = localStorage.getItem('local_uid') || `user_${Date.now()}`;
+      localStorage.setItem('local_uid', localUid);
+      activeUser = { uid: localUid };
+      const savedMeta = JSON.parse(localStorage.getItem(`user_meta_${localUid}`) || 'null');
+      if (savedMeta) {
+        activeUserData = savedMeta;
+      } else {
+        activeUserData = {
+          username: "Tom",
+          photoURL: selectedProfilePicBase64 || "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=150&q=80"
+        };
+      }
+      document.getElementById('auth-modal').classList.add('hidden');
+      document.getElementById('main-app').classList.remove('hidden');
+      loadDashboardProducts();
+    }
+
+    document.getElementById('profile-pic').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          selectedProfilePicBase64 = event.target.result;
+          document.getElementById('avatar-preview').src = selectedProfilePicBase64;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    document.getElementById('auth-submit-btn').addEventListener('click', async () => {
+      const username = document.getElementById('auth-username').value.trim();
+      const password = document.getElementById('auth-password').value;
+      const authMsg = document.getElementById('auth-msg');
+
+      if (username.length < 2 || username.length > 10) {
+        authMsg.innerText = "Username must be 2 to 10 characters long.";
+        return;
+      }
+      if (password.length < 5 || password.length > 16) {
+        authMsg.innerText = "Password must be 5 to 16 characters long.";
+        return;
+      }
+
+      const email = `${username.toLowerCase()}@businessapp.com`;
+
+      try {
+        authMsg.style.color = "#1a73e8";
+        authMsg.innerText = "Authenticating...";
+
+        let userCred;
+        if (auth) {
+          try {
+            userCred = await signInWithEmailAndPassword(auth, email, password);
+          } catch (error) {
+            if (error.code === "auth/user-not-found" || error.code === "auth/invalid-credential" || error.code === "auth/configuration-not-found") {
+              userCred = await createUserWithEmailAndPassword(auth, email, password);
+            } else {
+              throw error;
+            }
+          }
+        } else {
+          userCred = { user: { uid: `local_${Date.now()}` } };
+        }
+
+        const meta = {
+          username: username,
+          photoURL: selectedProfilePicBase64 || "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=150&q=80",
+          createdAt: new Date().toISOString()
+        };
+
+        const uid = userCred.user ? userCred.user.uid : `user_${Date.now()}`;
+        localStorage.setItem(`user_meta_${uid}`, JSON.stringify(meta));
+        activeUserData = meta;
+        activeUser = { uid: uid };
+
+        if (db && userCred.user) {
+          try {
+            await setDoc(doc(db, "users", uid), meta);
+          } catch (dbErr) { console.warn("Firestore user sync warning:", dbErr); }
+        }
+
+        document.getElementById('auth-modal').classList.add('hidden');
+        document.getElementById('main-app').classList.remove('hidden');
+        loadDashboardProducts();
+
+      } catch (err) {
+        initLocalSession();
+      }
+    });
+
+    // DASHBOARD VIEWS
+    window.showDashboardView = function() {
+      document.getElementById('dashboard-view').classList.remove('hidden');
+      document.getElementById('product-detail-view').classList.add('hidden');
+      document.getElementById('direct-chat-view').classList.add('hidden');
+      loadDashboardProducts();
+    };
+
+    function loadDashboardProducts() {
+      const yourList = document.getElementById('your-products-list');
+      const othersList = document.getElementById('others-products-list');
+
+      yourList.innerHTML = `
+        <div class="product-card add-card" onclick="openCreateProductModal()">
+          <span class="material-icons add-icon">add_box</span>
+          <p class="text-xs font-semibold">Create</p>
+        </div>
+      `;
+      othersList.innerHTML = '';
+
+      productsList.forEach((item) => {
+        const card = document.createElement('div');
+        card.className = "product-card";
+
+        const priceDisplay = item.price ? `${item.currency || ''} ${item.price}` : 'No Price';
+
+        card.innerHTML = `
+          ${item.photoURL ? `<img src="${item.photoURL}" class="card-image" />` : `<div class="card-image"></div>`}
+          <div class="w-full text-center">
+            <p class="text-xs font-semibold truncate text-gray-800">${item.name}</p>
+            <p class="text-[10px] font-bold text-green-600 truncate">${priceDisplay}</p>
+          </div>
+        `;
+
+        if (activeUser && item.userId === activeUser.uid) {
+          let pressTimer = null;
+
+          const startPress = () => {
+            pressTimer = setTimeout(() => {
+              openActionsModal(item);
+            }, 500);
+          };
+
+          const cancelPress = () => {
+            if (pressTimer) clearTimeout(pressTimer);
+          };
+
+          card.addEventListener('touchstart', startPress, { passive: true });
+          card.addEventListener('touchend', cancelPress);
+          card.addEventListener('touchmove', cancelPress);
+
+          card.addEventListener('mousedown', startPress);
+          card.addEventListener('mouseup', cancelPress);
+          card.addEventListener('mouseleave', cancelPress);
+
+          card.onclick = (e) => {
+            if (pressTimer) clearTimeout(pressTimer);
+            openProductDetail(item);
+          };
+
+          yourList.appendChild(card);
+        } else {
+          card.onclick = () => openProductDetail(item);
+          othersList.appendChild(card);
+        }
+      });
+
+      localStorage.setItem('app_products_db', JSON.stringify(productsList));
+    }
+
+    function openActionsModal(product) {
+      targetActionProduct = product;
+      document.getElementById('action-modal-title').innerText = product.name;
+      document.getElementById('product-actions-modal').classList.remove('hidden');
+    }
+
+    window.closeActionsModal = function() {
+      document.getElementById('product-actions-modal').classList.add('hidden');
+      targetActionProduct = null;
+    };
+
+    window.triggerEditProduct = function() {
+      if (!targetActionProduct) return;
+      const prodToEdit = targetActionProduct;
+      closeActionsModal();
+      openCreateProductModal(prodToEdit);
+    };
+
+    window.triggerDeleteProduct = function() {
+      if (!targetActionProduct) return;
+      const prodId = targetActionProduct.id;
+      
+      productsList = productsList.filter(p => p.id !== prodId);
+      localStorage.setItem('app_products_db', JSON.stringify(productsList));
+
+      if (db) {
+        try {
+          deleteDoc(doc(db, "products", prodId));
+        } catch(e) { console.warn("Delete error:", e); }
+      }
+
+      closeActionsModal();
+      loadDashboardProducts();
+      showToast("Product deleted!");
+    };
+
+    function openProductDetail(product) {
+      currentSelectedProduct = product;
+      document.getElementById('dashboard-view').classList.add('hidden');
+      document.getElementById('direct-chat-view').classList.add('hidden');
+      document.getElementById('product-detail-view').classList.remove('hidden');
+
+      document.getElementById('detail-nav-title').innerText = product.name;
+      document.getElementById('detail-title').innerText = product.name;
+      document.getElementById('detail-price').innerText = product.price ? `${product.currency || ''} ${product.price}` : 'Price Unspecified';
+      document.getElementById('detail-desc').innerText = product.description || "No description provided.";
+      document.getElementById('detail-img').src = product.photoURL || "https://via.placeholder.com/400?text=No+Photo";
+      
+      document.getElementById('detail-owner-avatar').src = product.userPhoto || "https://via.placeholder.com/48";
+      document.getElementById('detail-owner-username').innerText = product.username || "Tom";
+    }
+
+    // DIRECT MESSAGING
+    window.openDirectChat = function(recipientObj) {
+      let recipient = recipientObj || {
+        userId: currentSelectedProduct ? currentSelectedProduct.userId : "tom_id",
+        username: currentSelectedProduct ? currentSelectedProduct.username : "Tom",
+        userPhoto: currentSelectedProduct ? currentSelectedProduct.userPhoto : "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80"
+      };
+
+      currentChatRecipient = recipient;
+
+      document.getElementById('dashboard-view').classList.add('hidden');
+      document.getElementById('product-detail-view').classList.add('hidden');
+      document.getElementById('direct-chat-view').classList.remove('hidden');
+
+      document.getElementById('chat-header-avatar').src = recipient.userPhoto;
+      document.getElementById('chat-header-username').innerText = recipient.username;
+
+      updateBlockUI();
+      renderChatMessages();
+      
+      localStorage.setItem('has_unread_msg', 'false');
+      checkUnreadMessages();
+    };
+
+    window.toggleChatOptionsMenu = function() {
+      document.getElementById('chat-options-menu').classList.toggle('hidden');
+    };
+
+    function updateBlockUI() {
+      const isBlocked = blockedUsers.includes(currentChatRecipient.userId);
+      const activeBar = document.getElementById('chat-bottom-bar');
+      const blockedBar = document.getElementById('chat-blocked-bar');
+
+      if (isBlocked) {
+        activeBar.classList.add('hidden');
+        blockedBar.classList.remove('hidden');
+      } else {
+        activeBar.classList.remove('hidden');
+        blockedBar.classList.add('hidden');
+      }
+    }
+
+    window.blockCurrentUser = function() {
+      if (!blockedUsers.includes(currentChatRecipient.userId)) {
+        blockedUsers.push(currentChatRecipient.userId);
+        localStorage.setItem('app_blocked_users', JSON.stringify(blockedUsers));
+      }
+      document.getElementById('chat-options-menu').classList.add('hidden');
+      updateBlockUI();
+    };
+
+    window.unblockCurrentUser = function() {
+      blockedUsers = blockedUsers.filter(id => id !== currentChatRecipient.userId);
+      localStorage.setItem('app_blocked_users', JSON.stringify(blockedUsers));
+      updateBlockUI();
+    };
+
+    window.handleMediaSelect = function(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => { attachmentMediaBase64 = e.target.result; };
+        reader.readAsDataURL(file);
+      }
+    };
+
+    window.sendMessage = function() {
+      const input = document.getElementById('chat-input-text');
+      const text = input.value.trim();
+      if (!text && !attachmentMediaBase64) return;
+
+      const myId = activeUser ? activeUser.uid : "local_user";
+      const threadKey = getThreadKey(myId, currentChatRecipient.userId);
+      if (!chatThreads[threadKey]) chatThreads[threadKey] = [];
+
+      const newMsg = {
+        senderId: myId,
+        senderName: activeUserData.username,
+        text: text,
+        media: attachmentMediaBase64,
+        timestamp: new Date().toISOString()
+      };
+
+      chatThreads[threadKey].push(newMsg);
+      localStorage.setItem('app_chat_threads', JSON.stringify(chatThreads));
+      localStorage.setItem('has_unread_msg', 'true');
+      checkUnreadMessages();
+
+      input.value = '';
+      attachmentMediaBase64 = '';
+      renderChatMessages();
+    };
+
+    function getThreadKey(id1, id2) {
+      return [id1, id2].sort().join('_');
+    }
+
+    function renderChatMessages() {
+      const container = document.getElementById('chat-messages-container');
+      container.innerHTML = '';
+
+      const myId = activeUser ? activeUser.uid : "local_user";
+      const threadKey = getThreadKey(myId, currentChatRecipient.userId);
+      const messages = chatThreads[threadKey] || [];
+
+      messages.forEach(msg => {
+        const isMe = msg.senderId === myId;
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `flex ${isMe ? 'justify-end' : 'justify-start'}`;
+
+        let mediaHtml = '';
+        if (msg.media) {
+          if (msg.media.startsWith('data:video')) {
+            mediaHtml = `<video src="${msg.media}" controls class="max-w-xs rounded-lg mb-1"></video>`;
+          } else {
+            mediaHtml = `<img src="${msg.media}" class="max-w-xs rounded-lg mb-1 object-cover" />`;
+          }
+        }
+
+        msgDiv.innerHTML = `
+          <div class="max-w-[75%] rounded-2xl px-4 py-2 text-sm ${isMe ? 'bg-blue-600 text-white rounded-br-none' : 'bg-white border border-gray-200 text-gray-900 rounded-bl-none shadow-xs'}">
+            ${mediaHtml}
+            ${msg.text ? `<p>${msg.text}</p>` : ''}
+          </div>
+        `;
+        container.appendChild(msgDiv);
+      });
+
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // CHAT DRAWER
+    window.toggleChatDrawer = function() {
+      const drawer = document.getElementById('chat-drawer');
+      drawer.classList.toggle('hidden');
+      if (!drawer.classList.contains('hidden')) renderRecentChats();
+    };
+
+    function checkUnreadMessages() {
+      const hasUnread = localStorage.getItem('has_unread_msg') === 'true';
+      const dot = document.getElementById('unread-dot');
+      if (hasUnread) dot.classList.remove('hidden');
+      else dot.classList.add('hidden');
+    }
+
+    function renderRecentChats() {
+      const container = document.getElementById('recent-chats-list');
+      container.innerHTML = '';
+
+      let conversationAccounts = [
+        {
+          userId: "tom_id",
+          username: "Tom",
+          userPhoto: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80",
+          lastMsg: "Hi Timmy! Check out my products."
+        }
+      ];
+
+      conversationAccounts.forEach(acc => {
+        const item = document.createElement('div');
+        item.className = "flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 cursor-pointer transition chat-account-item";
+        item.onclick = () => {
+          toggleChatDrawer();
+          openDirectChat(acc);
+        };
+
+        item.innerHTML = `
+          <img src="${acc.userPhoto}" class="w-11 h-11 rounded-full object-cover border border-gray-200">
+          <div class="flex-1 overflow-hidden">
+            <h4 class="font-bold text-gray-900 text-sm account-name">${acc.username}</h4>
+            <p class="text-xs text-gray-500 truncate">${acc.lastMsg}</p>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    window.filterChats = function() {
+      const query = document.getElementById('search-chat-account').value.toLowerCase();
+      const items = document.querySelectorAll('.chat-account-item');
+      items.forEach(item => {
+        const name = item.querySelector('.account-name').innerText.toLowerCase();
+        item.style.display = name.includes(query) ? 'flex' : 'none';
+      });
+    };
+
+    // PRODUCT CREATION / EDITING
+    window.openCreateProductModal = function(editObj = null) {
+      const modalTitle = document.getElementById('prod-modal-title');
+      const nameInput = document.getElementById('prod-name-input');
+      const priceInput = document.getElementById('prod-price-input');
+      const currencyInput = document.getElementById('prod-currency-input');
+      const descInput = document.getElementById('prod-desc-input');
+      const preview = document.getElementById('prod-photo-preview');
+
+      if (editObj) {
+        editingProductId = editObj.id;
+        modalTitle.innerText = "Edit Product";
+        nameInput.value = editObj.name || '';
+        priceInput.value = editObj.price || '';
+        currencyInput.value = editObj.currency || '৳ TK';
+        descInput.value = editObj.description || '';
+        selectedProductPhotoBase64 = editObj.photoURL || '';
+        
+        if (editObj.photoURL) {
+          preview.src = editObj.photoURL;
+          preview.style.display = 'block';
+        } else {
+          preview.style.display = 'none';
+        }
+      } else {
+        editingProductId = null;
+        modalTitle.innerText = "Create Product";
+        nameInput.value = '';
+        priceInput.value = '';
+        currencyInput.value = '৳ TK';
+        descInput.value = '';
+        preview.style.display = 'none';
+        selectedProductPhotoBase64 = '';
+      }
+
+      document.getElementById('create-status').innerText = '';
+      document.getElementById('create-product-modal').classList.remove('hidden');
+    };
+
+    window.closeCreateProductModal = function() {
+      document.getElementById('create-product-modal').classList.add('hidden');
+      editingProductId = null;
+      selectedProductPhotoBase64 = '';
+    };
+
+    document.getElementById('prod-photo-input').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          selectedProductPhotoBase64 = event.target.result;
+          const preview = document.getElementById('prod-photo-preview');
+          preview.src = selectedProductPhotoBase64;
+          preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    window.saveProduct = async function() {
+      const name = document.getElementById('prod-name-input').value.trim();
+      const price = document.getElementById('prod-price-input').value.trim();
+      const currency = document.getElementById('prod-currency-input').value;
+      const desc = document.getElementById('prod-desc-input').value.trim();
+      const status = document.getElementById('create-status');
+
+      if (name.length < 2 || name.length > 8) {
+        status.innerText = "Product name must be 2 to 8 characters.";
+        return;
+      }
+      if (!price) {
+        status.innerText = "Please specify a product price.";
+        return;
+      }
+      if (desc.length > 0 && (desc.length < 10 || desc.length > 500)) {
+        status.innerText = "Description must be 10 to 500 characters if provided.";
+        return;
+      }
+
+      try {
+        status.style.color = "#1a73e8";
+        status.innerText = "Saving product...";
+
+        const myUid = activeUser ? activeUser.uid : 'user_id';
+
+        if (editingProductId) {
+          const idx = productsList.findIndex(p => p.id === editingProductId);
+          if (idx !== -1) {
+            productsList[idx].name = name;
+            productsList[idx].price = price;
+            productsList[idx].currency = currency;
+            productsList[idx].description = desc;
+            if (selectedProductPhotoBase64) productsList[idx].photoURL = selectedProductPhotoBase64;
+          }
+
+          if (db) {
+            try {
+              await updateDoc(doc(db, "products", editingProductId), {
+                name, price, currency, description: desc,
+                ...(selectedProductPhotoBase64 && { photoURL: selectedProductPhotoBase64 })
+              });
+            } catch (e) { console.warn("Firestore update fallback:", e); }
+          }
+
+          status.style.color = "green";
+          status.innerText = "Product Updated!";
+        } else {
+          const newProdId = `prod_${Date.now()}`;
+          const newProduct = {
+            id: newProdId,
+            name: name,
+            price: price,
+            currency: currency,
+            description: desc,
+            photoURL: selectedProductPhotoBase64 || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=400&q=80",
+            userId: myUid,
+            username: activeUserData.username,
+            userPhoto: activeUserData.photoURL,
+            createdAt: new Date().toISOString()
+          };
+
+          productsList.unshift(newProduct);
+
+          if (db) {
+            try {
+              await setDoc(doc(db, "products", newProdId), newProduct);
+            } catch (e) { console.warn("Firestore save fallback:", e); }
+          }
+
+          status.style.color = "green";
+          status.innerText = "Product Created!";
+        }
+
+        localStorage.setItem('app_products_db', JSON.stringify(productsList));
+
+        setTimeout(() => {
+          closeCreateProductModal();
+          loadDashboardProducts();
+        }, 800);
+
+      } catch (err) {
+        status.style.color = "#d93025";
+        status.innerText = err.message;
+      }
+    };
+  </script>
+</body>
+</html>
+
+```
