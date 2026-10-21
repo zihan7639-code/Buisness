@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Business Web App</title>
+
+  <!-- Google Fonts & Icons -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Montserrat:wght@300;400;600;700&display=swap">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green: #00ff41;
+      --green-glow: rgba(0,255,65,0.25);
+    }
+
+    body {
+      background: #000000;
+      color: #ffffff;
+      font-family: 'Montserrat', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      margin: 0;
+      user-select: none;
+    }
+
+    /* Scanline overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,65,0.015) 2px, rgba(0,255,65,0.015) 4px);
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    #matrix {
+      position: fixed;
+      inset: 0;
+      opacity: 0.12;
+      z-index: 0;
+    }
+
+    /* Subgate styles */
+    .gate {
+      position: relative;
+      z-index: 10;
+      width: 90%;
+      max-width: 440px;
+      background: rgba(0,0,0,0.92);
+      border: 1px solid #00aa2a;
+      box-shadow: 0 0 40px var(--green-glow);
+      padding: 2rem 1.5rem;
+      font-family: 'Share Tech Mono', monospace;
+      color: var(--green);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    /* Google Sites Styled Top Bar */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+      background-color: #ffffff;
+      border-bottom: 1px solid #dadce0;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      color: #202124;
+    }
+
+    .dashboard-content {
+      padding: 24px;
+      background-color: #f8f9fa;
+      color: #202124;
+      min-height: calc(100vh - 57px);
+      max-width: 900px;
+      margin: 0 auto;
+      border-radius: 12px 12px 0 0;
+    }
+
+    .section-row { margin-bottom: 30px; }
+    .section-header { display: flex; align-items: center; gap: 4px; margin-bottom: 12px; }
+    .section-header h6 { font-size: 16px; font-weight: 600; color: #3c4043; text-transform: capitalize; }
+    .arrow-icon { color: #5f6368; }
+
+    .horizontal-scroll {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      padding-bottom: 10px;
+      scrollbar-width: thin;
+    }
+
+    .product-card {
+      min-width: 150px;
+      width: 150px;
+      height: 190px;
+      background-color: #ffffff;
+      border: 1px solid #dadce0;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+    }
+    .product-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .card-image {
+      width: 100%;
+      height: 100px;
+      background-color: #f1f3f4;
+      border-radius: 6px;
+      object-fit: cover;
+    }
+
+    .add-card {
+      border: 2px dashed #1a73e8;
+      background-color: #f8f9fa;
+      color: #1a73e8;
+      justify-content: center;
+    }
+    .add-icon { font-size: 38px; margin-bottom: 4px; }
+
+    .vertical-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 16px;
+    }
+
+    .image-upload-box {
+      width: 100%;
+      height: 120px;
+      border: 2px dashed #dadce0;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      background-color: #f8f9fa;
+      position: relative;
+      overflow: hidden;
+    }
+    .image-upload-box:hover { border-color: #1a73e8; background-color: #f1f3f4; }
+    .image-upload-box .material-icons { font-size: 36px; color: #5f6368; }
+    .image-upload-box img {
+      width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; display: none;
+    }
+  </style>
+</head>
+<body class="bg-black text-white">
+
+  <canvas id="matrix"></canvas>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-red-600 text-white text-xs px-4 py-2.5 rounded-lg shadow-xl flex items-center gap-2">
+    <span class="material-icons text-sm">warning</span>
+    <span id="toast-text">Notice</span>
+  </div>
+
+  <!-- SUB GATE CONTAINER -->
+  <div id="sub-gate-container" class="fixed inset-0 z-50 flex items-center justify-center bg-black p-4">
+    <div class="gate">
+      <div class="text-center mb-6">
+        <span class="text-3xl block mb-2 animate-pulse">⬡</span>
+        <h1 class="font-[Orbitron] text-lg font-black tracking-widest text-[#00ff41]">SYSTEM INIT</h1>
+        <p class="text-xs text-green-500/70 mt-1">Verifying Session...</p>
+      </div>
+      <div class="w-full h-0.5 bg-[#00ff41] animate-pulse"></div>
+      <button onclick="bypassSubgate()" class="mt-6 w-full border border-[#00ff41] text-[#00ff41] font-[Orbitron] py-3 text-xs tracking-widest hover:bg-[#00ff41]/10 transition">
+        [ ENTER BUSINESS ]
+      </button>
+    </div>
+  </div>
+
+  <!-- ACCOUNT SIGN-IN / SIGN-UP PAGE -->
+  <div id="auth-modal" class="hidden fixed inset-0 z-40 bg-black/95 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-zinc-900 border border-green-500/50 rounded-2xl p-6 w-full max-w-sm text-center shadow-[0_0_30px_rgba(0,255,65,0.15)] space-y-4">
+      <h2 class="text-xl font-bold font-mono text-green-400">ACCOUNT ACCESS</h2>
+      
+      <!-- Profile Picture Circle Upload -->
+      <div class="relative w-20 h-20 mx-auto rounded-full bg-zinc-800 border-2 border-green-500 overflow-hidden flex items-center justify-center cursor-pointer group">
+        <img id="auth-avatar-preview" src="https://via.placeholder.com/80" class="w-full h-full object-cover hidden">
+        <span id="auth-plus-icon" class="material-icons text-3xl text-green-400">add</span>
+        <input type="file" id="auth-profile-pic" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" onchange="previewAuthAvatar(event)">
+      </div>
+      <p class="text-[10px] text-gray-400 font-mono">Tap circle to add profile picture</p>
+
+      <!-- Username & Password Inputs (2-16 chars) -->
+      <input type="text" id="auth-username" minlength="2" maxlength="16" placeholder="Username (2-16 chars)" class="w-full bg-black border border-white/20 rounded-lg p-3 text-white focus:outline-none focus:border-green-400 text-sm font-mono">
+      <input type="password" id="auth-password" minlength="2" maxlength="16" placeholder="Password (2-16 chars)" class="w-full bg-black border border-white/20 rounded-lg p-3 text-white focus:outline-none focus:border-green-400 text-sm font-mono">
+      
+      <div class="space-y-2 pt-2">
+        <button onclick="handleAccountCreate()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg font-mono uppercase text-sm transition">Create</button>
+        <button onclick="handleAccountSignIn()" class="w-full bg-transparent hover:bg-white/5 text-blue-400 border border-blue-500 font-bold py-2.5 rounded-lg font-mono uppercase text-xs transition">Sign In</button>
+      </div>
+      <div id="auth-msg" class="text-xs font-mono text-red-400 min-h-[16px]"></div>
+    </div>
+  </div>
+
+  <!-- MAIN APP CONTAINER -->
+  <div id="main-app" class="hidden relative z-10 min-h-screen bg-black">
+    
+    <!-- Top Bar -->
+    <header class="top-bar">
+      <div class="flex items-center gap-3">
+        <!-- 3-Line Menu -->
+        <button onclick="toggleChatDrawer()" class="relative p-1 text-gray-700 hover:text-black">
+          <span class="material-icons text-2xl">menu</span>
+          <span id="unread-dot" class="hidden absolute top-0 right-0 w-2.5 h-2.5 bg-red-600 rounded-full border-2 border-white"></span>
+        </button>
+        <!-- User Profile Avatar & Username -->
+        <img id="top-bar-avatar" src="https://via.placeholder.com/36" onclick="openProfileModal()" class="w-9 h-9 rounded-full object-cover border border-gray-300 cursor-pointer hover:opacity-90">
+        <span id="top-bar-username" onclick="openProfileModal()" class="font-bold text-gray-800 text-sm cursor-pointer hover:underline">User</span>
+        <!-- Subject Title -->
+        <span class="text-xs font-bold uppercase tracking-widest bg-gray-100 text-gray-600 px-2.5 py-1 rounded-md border border-gray-200 ml-1">business</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <!-- Search Icon -->
+        <button onclick="openSearchModal()" class="p-1 text-gray-600 hover:text-black">
+          <span class="material-icons text-2xl">search</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- DASHBOARD VIEW -->
+    <main id="dashboard-view" class="dashboard-content">
+      <section class="section-row">
+        <div class="section-header">
+          <h6>Your</h6>
+          <span class="material-icons arrow-icon">chevron_right</span>
+        </div>
+        
+        <div class="horizontal-scroll" id="your-products-list">
+          <div class="product-card add-card" onclick="openCreateProductModal()">
+            <span class="material-icons add-icon">add_box</span>
+            <p class="text-xs font-semibold">Create</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-row">
+        <div class="section-header">
+          <h6>Others</h6>
+          <span class="material-icons arrow-icon">expand_more</span>
+        </div>
+        
+        <div class="vertical-grid" id="others-products-list"></div>
+      </section>
+    </main>
+
+    <!-- PRODUCT DETAIL / ZOOM VIEW -->
+    <div id="product-detail-view" class="hidden min-h-[calc(100vh-57px)] bg-[#f8f9fa] text-gray-900 p-4 max-w-2xl mx-auto rounded-xl mt-4">
+      <div class="flex items-center gap-3 border-b border-gray-200 pb-3 mb-4">
+        <button onclick="showDashboardView()" class="p-1 hover:bg-gray-200 rounded-full transition">
+          <span class="material-icons text-gray-700">arrow_back</span>
+        </button>
+        <h2 class="text-lg font-bold text-gray-800" id="detail-nav-title">Product Details</h2>
+      </div>
+
+      <div class="space-y-4">
+        <img id="detail-img" src="" alt="Product Photo" class="w-full max-h-80 object-cover rounded-xl border border-gray-200 bg-white">
+        <div class="flex items-start justify-between gap-4">
+          <h1 id="detail-title" class="text-2xl font-bold text-gray-900"></h1>
+          <span id="detail-price" class="text-xl font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-lg border border-blue-200 whitespace-nowrap"></span>
+        </div>
+        <p id="detail-desc" class="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap"></p>
+
+        <div class="flex items-center justify-between bg-white border border-gray-200 p-4 rounded-xl mt-6 shadow-xs">
+          <div class="flex items-center gap-3">
+            <img id="detail-owner-avatar" src="https://via.placeholder.com/48" class="w-12 h-12 rounded-full object-cover border border-gray-300">
+            <div>
+              <p class="text-xs text-gray-500 font-medium">Created by</p>
+              <h4 id="detail-owner-username" class="font-bold text-gray-900 text-base"></h4>
+            </div>
+          </div>
+          <button id="detail-chat-btn" onclick="openDirectChat()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-semibold text-sm transition">
+            Chat
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DIRECT CHAT VIEW -->
+    <div id="direct-chat-view" class="hidden min-h-[calc(100vh-57px)] flex flex-col bg-white text-gray-900 max-w-2xl mx-auto w-full">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white sticky top-[57px] z-30">
+        <div class="flex items-center gap-3">
+          <button onclick="showDashboardView()" class="p-1 hover:bg-gray-100 rounded-full">
+            <span class="material-icons text-gray-700">arrow_back</span>
+          </button>
+          <img id="chat-header-avatar" src="https://via.placeholder.com/40" class="w-10 h-10 rounded-full object-cover border border-gray-300">
+          <h3 id="chat-header-username" class="font-bold text-gray-900 text-base"></h3>
+        </div>
+
+        <div class="relative">
+          <button onclick="toggleChatOptionsMenu()" class="p-1 text-gray-600 hover:text-gray-900 rounded-full">
+            <span class="material-icons">more_vert</span>
+          </button>
+          <div id="chat-options-menu" class="hidden absolute right-0 top-10 bg-white border border-gray-200 shadow-lg rounded-lg py-1 w-32 z-50">
+            <button onclick="blockCurrentUser()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium">
+              Block
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="chat-messages-container" class="flex-1 p-4 space-y-3 overflow-y-auto bg-gray-50"></div>
+
+      <!-- Attachment Preview Box -->
+      <div id="chat-attachment-preview-box" class="hidden px-4 py-2 bg-gray-100 border-t border-gray-200 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <img id="chat-media-thumb" class="w-12 h-12 rounded object-cover border border-gray-300">
+          <span class="text-xs text-gray-600 font-medium">Media attached</span>
+        </div>
+        <button onclick="removeChatAttachment()" class="p-1 text-gray-500 hover:text-red-600">
+          <span class="material-icons text-sm">close</span>
+        </button>
+      </div>
+
+      <div id="chat-bottom-bar" class="p-3 border-t border-gray-200 bg-white flex items-center gap-2">
+        <label for="chat-media-input" class="p-2 text-gray-500 hover:text-blue-600 cursor-pointer rounded-full hover:bg-gray-100">
+          <span class="material-icons">add</span>
+        </label>
+        <input type="file" id="chat-media-input" accept="image/*,video/*" class="hidden" onchange="handleMediaSelect(event)">
+        <input type="text" id="chat-input-text" placeholder="Type a message..." class="flex-1 bg-gray-100 border border-gray-200 rounded-full px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 text-gray-900">
+        <button onclick="sendMessage()" class="bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-full flex items-center justify-center transition">
+          <span class="material-icons text-sm">send</span>
+        </button>
+      </div>
+
+      <div id="chat-blocked-bar" class="hidden p-3 border-t border-gray-200 bg-gray-100 flex items-center justify-between px-6">
+        <span class="text-xs text-gray-500 font-medium">You have blocked this user.</span>
+        <button onclick="unblockCurrentUser()" class="text-blue-600 hover:underline font-bold text-sm">Unblock</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- USER PROFILE SIDE MODAL -->
+  <div id="profile-side-modal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex">
+    <div class="bg-white text-gray-900 w-80 max-w-[85vw] h-full shadow-2xl flex flex-col p-6 relative">
+      <div class="flex items-center mb-6">
+        <button onclick="closeProfileModal()" class="p-1 text-gray-600 hover:text-gray-900 rounded-full">
+          <span class="material-icons text-2xl">close</span>
+        </button>
+      </div>
+
+      <div class="flex flex-col items-center flex-1 text-center space-y-4">
+        <img id="profile-modal-avatar" src="" class="w-28 h-28 rounded-full object-cover border-4 border-blue-500 shadow-md">
+        <h3 id="profile-modal-username" class="text-xl font-bold text-gray-900"></h3>
+
+        <div class="flex items-center gap-4 pt-4">
+          <button onclick="openProfileEditor()" class="bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 p-3 rounded-xl flex items-center justify-center transition" title="Edit Profile">
+            <span class="material-icons">edit</span>
+          </button>
+          <button onclick="promptDeleteAccount()" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 p-3 rounded-xl flex items-center justify-center transition" title="Delete Account">
+            <span class="material-icons">delete</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="flex-1" onclick="closeProfileModal()"></div>
+  </div>
+
+  <!-- PROFILE EDIT / PASSWORD MODAL -->
+  <div id="profile-edit-modal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white text-gray-900 rounded-xl p-6 w-full max-w-sm shadow-2xl space-y-4">
+      <h3 class="text-lg font-bold text-gray-900">Edit Profile & Password</h3>
+
+      <div class="text-center">
+        <div class="relative w-20 h-20 mx-auto rounded-full bg-gray-100 border-2 border-blue-500 overflow-hidden flex items-center justify-center cursor-pointer">
+          <img id="edit-avatar-preview" class="w-full h-full object-cover">
+          <input type="file" id="edit-profile-pic" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" onchange="previewEditAvatar(event)">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Username</label>
+        <input type="text" id="edit-username-input" minlength="2" maxlength="16" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500">
+      </div>
+
+      <div class="border-t border-gray-200 pt-3">
+        <button onclick="togglePasswordSection()" class="text-blue-600 hover:underline text-xs font-bold uppercase">Change Password</button>
+        <div id="password-change-section" class="hidden space-y-3 mt-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
+          <div>
+            <label class="block text-[10px] font-bold text-gray-600 uppercase mb-1">Write your first password</label>
+            <input type="password" id="edit-old-pass" placeholder="Current Password" class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-gray-600 uppercase mb-1">New Password</label>
+            <input type="password" id="edit-new-pass" placeholder="New Password (2-16 chars)" class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-gray-600 uppercase mb-1">Confirm New Password</label>
+            <input type="password" id="edit-confirm-pass" placeholder="Confirm Password" class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:outline-none focus:border-blue-500">
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-3 pt-2">
+        <button onclick="closeProfileEditor()" class="text-gray-500 hover:underline text-sm font-medium">Cancel</button>
+        <button onclick="saveProfileChanges()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">Save</button>
+      </div>
+      <div id="edit-status" class="text-xs text-red-500 text-center min-h-[16px]"></div>
+    </div>
+  </div>
+
+  <!-- DELETE ACCOUNT CONFIRMATION MODAL -->
+  <div id="delete-account-modal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white text-gray-900 rounded-xl p-6 w-full max-w-xs text-center shadow-2xl space-y-4">
+      <h3 class="text-base font-bold text-gray-800">Do you want to delete your account?</h3>
+      <div class="flex items-center justify-center gap-6 pt-2">
+        <button onclick="confirmDeleteAccount()" class="text-red-600 font-bold text-base hover:underline">Yes</button>
+        <button onclick="closeDeleteModal()" class="text-blue-600 font-bold text-base hover:underline">No</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CREATE / EDIT PRODUCT MODAL -->
+  <div id="create-product-modal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white text-gray-900 rounded-xl p-6 w-full max-w-md shadow-2xl">
+      <h2 class="text-xl font-bold mb-4 text-gray-900" id="prod-modal-title">Create Product</h2>
+
+      <div class="mb-3 text-left">
+        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Product Name (2-8 chars) *</label>
+        <input type="text" id="prod-name-input" minlength="2" maxlength="8" placeholder="e.g. Phone" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500">
+      </div>
+
+      <div class="grid grid-cols-3 gap-2 mb-3 text-left">
+        <div class="col-span-1">
+          <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Currency *</label>
+          <select id="prod-currency-input" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500 bg-white">
+            <option value="৳ TK">৳ TK</option>
+            <option value="$ USD">$ USD</option>
+            <option value="€ EUR">€ EUR</option>
+            <option value="£ GBP">£ GBP</option>
+            <option value="₹ INR">₹ INR</option>
+          </select>
+        </div>
+        <div class="col-span-2">
+          <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Price *</label>
+          <input type="number" id="prod-price-input" min="0" step="any" placeholder="e.g. 500" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500">
+        </div>
+      </div>
+
+      <div class="mb-3 text-left">
+        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Description (Optional, 10-500 chars)</label>
+        <textarea id="prod-desc-input" minlength="10" maxlength="500" placeholder="Product details..." class="w-full border border-gray-300 rounded-lg p-2.5 text-sm h-20 resize-none focus:outline-none focus:border-blue-500"></textarea>
+      </div>
+
+      <div class="mb-5 text-left">
+        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Product Photo</label>
+        <label for="prod-photo-input" class="image-upload-box">
+          <span class="material-icons">add_box</span>
+          <span class="text-xs text-gray-500 mt-1">Add Photo</span>
+          <img id="prod-photo-preview" alt="Preview">
+        </label>
+        <input type="file" id="prod-photo-input" accept="image/*" class="hidden">
+      </div>
+
+      <div class="flex items-center justify-end gap-4">
+        <button onclick="closeCreateProductModal()" class="text-blue-600 hover:underline text-sm font-medium">Cancel</button>
+        <button id="save-prod-btn" onclick="saveProduct()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition">Create</button>
+      </div>
+      <div id="create-status" class="text-xs text-red-500 mt-3 text-center min-h-[16px]"></div>
+    </div>
+  </div>
+
+  <!-- TAP & HOLD ACTION MODAL (EDIT / DELETE) -->
+  <div id="product-actions-modal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white text-gray-900 rounded-xl p-6 w-full max-w-xs text-center shadow-2xl space-y-4">
+      <h3 class="text-base font-bold text-gray-800" id="action-modal-title">Product Options</h3>
+      
+      <div class="grid grid-cols-2 gap-3">
+        <button onclick="triggerEditProduct()" class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-bold py-3 px-4 rounded-xl flex flex-col items-center justify-center transition">
+          <span class="material-icons mb-1">edit</span>
+          Edit
+        </button>
+        <button onclick="triggerDeleteProduct()" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold py-3 px-4 rounded-xl flex flex-col items-center justify-center transition">
+          <span class="material-icons mb-1">delete</span>
+          Delete
+        </button>
+      </div>
+
+      <button onclick="closeActionsModal()" class="w-full text-gray-500 text-xs font-semibold py-2 hover:underline">Cancel</button>
+    </div>
+  </div>
+
+  <!-- SEARCH MODAL -->
+  <div id="search-modal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white text-gray-900 rounded-xl p-6 w-full max-w-md shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-gray-200 pb-2">
+        <h3 class="font-bold text-gray-800 text-base">Search Products</h3>
+        <button onclick="closeSearchModal()" class="text-gray-500 hover:text-gray-900">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      <input type="text" id="search-input-field" onkeyup="executeProductSearch()" placeholder="Type product name..." class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500">
+      <div id="search-results-list" class="max-h-60 overflow-y-auto space-y-2"></div>
+    </div>
+  </div>
+
+  <!-- SIDE CHAT DRAWER -->
+  <div id="chat-drawer" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex">
+    <div class="bg-white text-gray-900 w-80 max-w-[80vw] h-full shadow-2xl flex flex-col p-4 border-r border-gray-200">
+      <div class="flex justify-between items-center pb-3 border-b border-gray-200 mb-4">
+        <h2 class="text-xl font-bold text-gray-900">Messages</h2>
+        <button onclick="toggleChatDrawer()" class="p-1 text-gray-500 hover:text-gray-900">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+
+      <div class="relative mb-4">
+        <span class="material-icons absolute left-3 top-2.5 text-gray-400 text-lg">search</span>
+        <input type="text" id="search-chat-account" placeholder="Search conversation..." class="w-full pl-9 pr-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500">
+      </div>
+
+      <div id="recent-chats-list" class="flex-1 overflow-y-auto space-y-2">
+        <p class="text-xs text-gray-500 text-center py-4">No conversations yet.</p>
+      </div>
+    </div>
+    <div class="flex-1" onclick="toggleChatDrawer()"></div>
+  </div>
+
+  <!-- JAVASCRIPT APPLICATION LOGIC -->
+  <script>
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const text = document.getElementById('toast-text');
+      text.innerText = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 4000);
+    }
+
+    let authUser = JSON.parse(localStorage.getItem('business_auth_user') || 'null');
+    let allUsersDB = JSON.parse(localStorage.getItem('business_users_db') || '{}');
+    let productsList = JSON.parse(localStorage.getItem('business_products_db') || '[]');
+    let chatThreads = JSON.parse(localStorage.getItem('business_chat_threads') || '{}');
+    let blockedUsers = JSON.parse(localStorage.getItem('business_blocked_users') || '[]');
+
+    let authAvatarBase64 = "";
+    let editAvatarBase64 = "";
+    let selectedProductPhotoBase64 = "";
+    let editingProductId = null;
+    let targetActionProduct = null;
+    let currentSelectedProduct = null;
+    let currentChatRecipient = null;
+    let attachmentMediaBase64 = "";
+
+    // MATRIX RAIN EFFECT
+    const canvas = document.getElementById('matrix');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    let cols = Math.floor(canvas.width / 18);
+    let drops = Array(cols).fill(1);
+    const chars = '01100';
+    
+    function drawMatrix() {
+      ctx.fillStyle = 'rgba(0,0,0,0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#00ff41';
+      ctx.font = '14px Share Tech Mono';
+      drops.forEach((y, i) => {
+        const ch = chars[Math.floor(Math.random() * chars.length)];
+        ctx.fillText(ch, i * 18, y * 18);
+        if (y * 18 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      });
+    }
+    setInterval(drawMatrix, 50);
+
+    window.onload = function() {
+      setTimeout(() => {
+        document.getElementById('sub-gate-container').classList.add('hidden');
+        if (authUser) {
+          initializeMainApp();
+        } else {
+          document.getElementById('auth-modal').classList.remove('hidden');
+        }
+      }, 1200);
+    };
+
+    window.bypassSubgate = function() {
+      document.getElementById('sub-gate-container').classList.add('hidden');
+      if (authUser) {
+        initializeMainApp();
+      } else {
+        document.getElementById('auth-modal').classList.remove('hidden');
+      }
+    };
+
+    function previewAuthAvatar(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          authAvatarBase64 = e.target.result;
+          const preview = document.getElementById('auth-avatar-preview');
+          preview.src = authAvatarBase64;
+          preview.classList.remove('hidden');
+          document.getElementById('auth-plus-icon').classList.add('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function validateAuthInputs(username, password) {
+      if (!authAvatarBase64) {
+        showToast("Please put your profile picture");
+        return false;
+      }
+      if (username.length < 2 || username.length > 16) {
+        document.getElementById('auth-msg').innerText = "Username must be 2 to 16 characters.";
+        return false;
+      }
+      if (password.length < 2 || password.length > 16) {
+        document.getElementById('auth-msg').innerText = "Password must be 2 to 16 characters.";
+        return false;
+      }
+      return true;
+    }
+
+    window.handleAccountCreate = function() {
+      const username = document.getElementById('auth-username').value.trim();
+      const password = document.getElementById('auth-password').value;
+      document.getElementById('auth-msg').innerText = "";
+
+      if (!validateAuthInputs(username, password)) return;
+
+      const userId = 'user_' + Date.now();
+      const newUser = {
+        uid: userId,
+        username: username,
+        password: password,
+        photoURL: authAvatarBase64
+      };
+
+      allUsersDB[username.toLowerCase()] = newUser;
+      localStorage.setItem('business_users_db', JSON.stringify(allUsersDB));
+
+      authUser = newUser;
+      localStorage.setItem('business_auth_user', JSON.stringify(authUser));
+
+      document.getElementById('auth-modal').classList.add('hidden');
+      initializeMainApp();
+    };
+
+    window.handleAccountSignIn = function() {
+      const username = document.getElementById('auth-username').value.trim().toLowerCase();
+      const password = document.getElementById('auth-password').value;
+      const msg = document.getElementById('auth-msg');
+      msg.innerText = "";
+
+      if (!authAvatarBase64) {
+        showToast("Please put your profile picture");
+        return;
+      }
+
+      const foundUser = allUsersDB[username];
+      if (!foundUser || foundUser.password !== password) {
+        msg.innerText = "Account not found or incorrect credentials!";
+        return;
+      }
+
+      foundUser.photoURL = authAvatarBase64; // Update with current selected avatar
+      authUser = foundUser;
+      localStorage.setItem('business_auth_user', JSON.stringify(authUser));
+
+      document.getElementById('auth-modal').classList.add('hidden');
+      initializeMainApp();
+    };
+
+    function initializeMainApp() {
+      document.getElementById('main-app').classList.remove('hidden');
+      document.getElementById('top-bar-avatar').src = authUser.photoURL;
+      document.getElementById('top-bar-username').innerText = authUser.username;
+      showDashboardView();
+    }
+
+    window.showDashboardView = function() {
+      document.getElementById('dashboard-view').classList.remove('hidden');
+      document.getElementById('product-detail-view').classList.add('hidden');
+      document.getElementById('direct-chat-view').classList.add('hidden');
+      loadDashboardProducts();
+    };
+
+    function loadDashboardProducts() {
+      const yourList = document.getElementById('your-products-list');
+      const othersList = document.getElementById('others-products-list');
+
+      yourList.innerHTML = `
+        <div class="product-card add-card" onclick="openCreateProductModal()">
+          <span class="material-icons add-icon">add_box</span>
+          <p class="text-xs font-semibold">Create</p>
+        </div>
+      `;
+      othersList.innerHTML = '';
+
+      productsList.forEach((item) => {
+        const card = document.createElement('div');
+        card.className = "product-card";
+        const priceDisplay = item.price ? `${item.currency} ${item.price}` : 'Free';
+
+        card.innerHTML = `
+          ${item.photoURL ? `<img src="${item.photoURL}" class="card-image" />` : `<div class="card-image"></div>`}
+          <div class="w-full text-center">
+            <p class="text-xs font-semibold truncate text-gray-800">${item.name}</p>
+            <p class="text-[10px] font-bold text-blue-600 truncate">${priceDisplay}</p>
+          </div>
+        `;
+
+        if (authUser && item.userId === authUser.uid) {
+          let pressTimer = null;
+          const startPress = () => { pressTimer = setTimeout(() => openActionsModal(item), 500); };
+          const cancelPress = () => { if (pressTimer) clearTimeout(pressTimer); };
+
+          card.addEventListener('touchstart', startPress, { passive: true });
+          card.addEventListener('touchend', cancelPress);
+          card.addEventListener('touchmove', cancelPress);
+          card.addEventListener('mousedown', startPress);
+          card.addEventListener('mouseup', cancelPress);
+          card.addEventListener('mouseleave', cancelPress);
+
+          card.onclick = () => {
+            if (pressTimer) clearTimeout(pressTimer);
+            openProductDetail(item);
+          };
+
+          yourList.appendChild(card);
+        } else {
+          card.onclick = () => openProductDetail(item);
+          othersList.appendChild(card);
+        }
+      });
+
+      localStorage.setItem('business_products_db', JSON.stringify(productsList));
+    }
+
+    function openActionsModal(product) {
+      targetActionProduct = product;
+      document.getElementById('action-modal-title').innerText = product.name;
+      document.getElementById('product-actions-modal').classList.remove('hidden');
+    }
+
+    window.closeActionsModal = function() {
+      document.getElementById('product-actions-modal').classList.add('hidden');
+      targetActionProduct = null;
+    };
+
+    window.triggerEditProduct = function() {
+      if (!targetActionProduct) return;
+      const prodToEdit = targetActionProduct;
+      closeActionsModal();
+      openCreateProductModal(prodToEdit);
+    };
+
+    window.triggerDeleteProduct = function() {
+      if (!targetActionProduct) return;
+      productsList = productsList.filter(p => p.id !== targetActionProduct.id);
+      localStorage.setItem('business_products_db', JSON.stringify(productsList));
+      closeActionsModal();
+      loadDashboardProducts();
+      showToast("Product deleted successfully!");
+    };
+
+    function openProductDetail(product) {
+      currentSelectedProduct = product;
+      document.getElementById('dashboard-view').classList.add('hidden');
+      document.getElementById('direct-chat-view').classList.add('hidden');
+      document.getElementById('product-detail-view').classList.remove('hidden');
+
+      document.getElementById('detail-nav-title').innerText = product.name;
+      document.getElementById('detail-title').innerText = product.name;
+      document.getElementById('detail-price').innerText = product.price ? `${product.currency} ${product.price}` : '';
+      document.getElementById('detail-desc').innerText = product.description || "No description provided.";
+      document.getElementById('detail-img').src = product.photoURL || "https://via.placeholder.com/400?text=No+Photo";
+      
+      document.getElementById('detail-owner-avatar').src = product.userPhoto || "https://via.placeholder.com/48";
+      document.getElementById('detail-owner-username').innerText = product.username || "Owner";
+    }
+
+    // PROFILE MODAL & EDITING
+    window.openProfileModal = function() {
+      document.getElementById('profile-modal-avatar').src = authUser.photoURL;
+      document.getElementById('profile-modal-username').innerText = authUser.username;
+      document.getElementById('profile-side-modal').classList.remove('hidden');
+    };
+
+    window.closeProfileModal = function() {
+      document.getElementById('profile-side-modal').classList.add('hidden');
+    };
+
+    window.openProfileEditor = function() {
+      closeProfileModal();
+      editAvatarBase64 = authUser.photoURL;
+      document.getElementById('edit-avatar-preview').src = editAvatarBase64;
+      document.getElementById('edit-username-input').value = authUser.username;
+      document.getElementById('password-change-section').classList.add('hidden');
+      document.getElementById('edit-old-pass').value = '';
+      document.getElementById('edit-new-pass').value = '';
+      document.getElementById('edit-confirm-pass').value = '';
+      document.getElementById('edit-status').innerText = '';
+      document.getElementById('profile-edit-modal').classList.remove('hidden');
+    };
+
+    window.closeProfileEditor = function() {
+      document.getElementById('profile-edit-modal').classList.add('hidden');
+    };
+
+    function previewEditAvatar(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          editAvatarBase64 = e.target.result;
+          document.getElementById('edit-avatar-preview').src = editAvatarBase64;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    window.togglePasswordSection = function() {
+      document.getElementById('password-change-section').classList.toggle('hidden');
+    };
+
+    window.saveProfileChanges = function() {
+      const newUsername = document.getElementById('edit-username-input').value.trim();
+      const oldPass = document.getElementById('edit-old-pass').value;
+      const newPass = document.getElementById('edit-new-pass').value;
+      const confirmPass = document.getElementById('edit-confirm-pass').value;
+      const status = document.getElementById('edit-status');
+
+      if (newUsername.length < 2 || newUsername.length > 16) {
+        status.innerText = "Username must be 2 to 16 characters.";
+        return;
+      }
+
+      const passwordSectionVisible = !document.getElementById('password-change-section').classList.contains('hidden');
+      if (passwordSectionVisible) {
+        if (oldPass !== authUser.password) {
+          status.innerText = "First password does not match current password!";
+          return;
+        }
+        if (newPass.length < 2 || newPass.length > 16) {
+          status.innerText = "New password must be 2 to 16 characters.";
+          return;
+        }
+        if (newPass !== confirmPass) {
+          status.innerText = "New passwords do not match!";
+          return;
+        }
+        authUser.password = newPass;
+      }
+
+      authUser.username = newUsername;
+      authUser.photoURL = editAvatarBase64;
+
+      allUsersDB[newUsername.toLowerCase()] = authUser;
+      localStorage.setItem('business_users_db', JSON.stringify(allUsersDB));
+      localStorage.setItem('business_auth_user', JSON.stringify(authUser));
+
+      document.getElementById('top-bar-avatar').src = authUser.photoURL;
+      document.getElementById('top-bar-username').innerText = authUser.username;
+
+      closeProfileEditor();
+      showToast("Profile updated successfully!");
+    };
+
+    let pendingDelete = false;
+    window.promptDeleteAccount = function() {
+      closeProfileModal();
+      document.getElementById('delete-account-modal').classList.remove('hidden');
+    };
+
+    window.closeDeleteModal = function() {
+      document.getElementById('delete-account-modal').classList.add('hidden');
+    };
+
+    window.confirmDeleteAccount = function() {
+      localStorage.removeItem('business_auth_user');
+      location.reload();
+    };
+
+    // PRODUCT CREATION MODAL
+    window.openCreateProductModal = function(editObj = null) {
+      const modalTitle = document.getElementById('prod-modal-title');
+      const nameInput = document.getElementById('prod-name-input');
+      const priceInput = document.getElementById('prod-price-input');
+      const currencyInput = document.getElementById('prod-currency-input');
+      const descInput = document.getElementById('prod-desc-input');
+      const preview = document.getElementById('prod-photo-preview');
+
+      if (editObj) {
+        editingProductId = editObj.id;
+        modalTitle.innerText = "Edit Product";
+        nameInput.value = editObj.name || '';
+        priceInput.value = editObj.price || '';
+        currencyInput.value = editObj.currency || '৳ TK';
+        descInput.value = editObj.description || '';
+        selectedProductPhotoBase64 = editObj.photoURL || '';
+        
+        if (editObj.photoURL) {
+          preview.src = editObj.photoURL;
+          preview.style.display = 'block';
+        } else {
+          preview.style.display = 'none';
+        }
+      } else {
+        editingProductId = null;
+        modalTitle.innerText = "Create Product";
+        nameInput.value = '';
+        priceInput.value = '';
+        currencyInput.value = '৳ TK';
+        descInput.value = '';
+        preview.style.display = 'none';
+        selectedProductPhotoBase64 = '';
+      }
+
+      document.getElementById('create-status').innerText = '';
+      document.getElementById('create-product-modal').classList.remove('hidden');
+    };
+
+    window.closeCreateProductModal = function() {
+      document.getElementById('create-product-modal').classList.add('hidden');
+      editingProductId = null;
+      selectedProductPhotoBase64 = '';
+    };
+
+    document.getElementById('prod-photo-input').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          selectedProductPhotoBase64 = event.target.result;
+          const preview = document.getElementById('prod-photo-preview');
+          preview.src = selectedProductPhotoBase64;
+          preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    window.saveProduct = function() {
+      const name = document.getElementById('prod-name-input').value.trim();
+      const price = document.getElementById('prod-price-input').value.trim();
+      const currency = document.getElementById('prod-currency-input').value;
+      const desc = document.getElementById('prod-desc-input').value.trim();
+      const status = document.getElementById('create-status');
+
+      if (name.length < 2 || name.length > 8) {
+        status.innerText = "Product name must be 2 to 8 characters.";
+        return;
+      }
+      if (!price) {
+        status.innerText = "Please specify a price.";
+        return;
+      }
+      if (desc.length > 0 && (desc.length < 10 || desc.length > 500)) {
+        status.innerText = "Description must be 10 to 500 characters if provided.";
+        return;
+      }
+
+      if (editingProductId) {
+        const idx = productsList.findIndex(p => p.id === editingProductId);
+        if (idx !== -1) {
+          productsList[idx].name = name;
+          productsList[idx].price = price;
+          productsList[idx].currency = currency;
+          productsList[idx].description = desc;
+          if (selectedProductPhotoBase64) productsList[idx].photoURL = selectedProductPhotoBase64;
+        }
+        showToast("Product Updated!");
+      } else {
+        const newProduct = {
+          id: 'prod_' + Date.now(),
+          name: name,
+          price: price,
+          currency: currency,
+          description: desc,
+          photoURL: selectedProductPhotoBase64 || "https://images.unsplash.com/photo-1518091043644-c1d4457512c6?auto=format&fit=crop&w=400&q=80",
+          userId: authUser.uid,
+          username: authUser.username,
+          userPhoto: authUser.photoURL,
+          createdAt: new Date().toISOString()
+        };
+        productsList.unshift(newProduct);
+        showToast("Product Created Successfully!");
+      }
+
+      localStorage.setItem('business_products_db', JSON.stringify(productsList));
+      closeCreateProductModal();
+      loadDashboardProducts();
+    };
+
+    // SEARCH MODAL
+    window.openSearchModal = function() {
+      document.getElementById('search-input-field').value = '';
+      document.getElementById('search-results-list').innerHTML = '';
+      document.getElementById('search-modal').classList.remove('hidden');
+    };
+
+    window.closeSearchModal = function() {
+      document.getElementById('search-modal').classList.add('hidden');
+    };
+
+    window.executeProductSearch = function() {
+      const query = document.getElementById('search-input-field').value.trim().toLowerCase();
+      const container = document.getElementById('search-results-list');
+      container.innerHTML = '';
+
+      if (!query) return;
+
+      const matches = productsList.filter(p => p.name.toLowerCase().includes(query));
+      if (matches.length === 0) {
+        container.innerHTML = '<p class="text-xs text-gray-500 text-center py-2">No products found.</p>';
+        return;
+      }
+
+      matches.forEach(item => {
+        const div = document.createElement('div');
+        div.className = "flex items-center justify-between p-2 hover:bg-gray-100 rounded-lg cursor-pointer";
+        div.innerHTML = `
+          <div class="flex items-center gap-3">
+            <img src="${item.photoURL || 'https://via.placeholder.com/40'}" class="w-10 h-10 rounded object-cover">
+            <div>
+              <p class="text-xs font-bold text-gray-900">${item.name}</p>
+              <p class="text-[10px] text-blue-600 font-semibold">${item.currency} ${item.price}</p>
+            </div>
+          </div>
+        `;
+        div.onclick = () => {
+          closeSearchModal();
+          openProductDetail(item);
+        };
+        container.appendChild(div);
+      });
+    };
+
+    // CHAT SYSTEM
+    window.openDirectChat = function(recipientObj) {
+      let recipient = recipientObj || {
+        userId: currentSelectedProduct ? currentSelectedProduct.userId : "admin_1",
+        username: currentSelectedProduct ? currentSelectedProduct.username : "Owner",
+        userPhoto: currentSelectedProduct ? currentSelectedProduct.userPhoto : "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80"
+      };
+
+      currentChatRecipient = recipient;
+
+      document.getElementById('dashboard-view').classList.add('hidden');
+      document.getElementById('product-detail-view').classList.add('hidden');
+      document.getElementById('direct-chat-view').classList.remove('hidden');
+
+      document.getElementById('chat-header-avatar').src = recipient.userPhoto;
+      document.getElementById('chat-header-username').innerText = recipient.username;
+
+      updateBlockUI();
+      renderChatMessages();
+    };
+
+    window.toggleChatOptionsMenu = function() {
+      document.getElementById('chat-options-menu').classList.toggle('hidden');
+    };
+
+    function updateBlockUI() {
+      const isBlocked = blockedUsers.includes(currentChatRecipient.userId);
+      const activeBar = document.getElementById('chat-bottom-bar');
+      const blockedBar = document.getElementById('chat-blocked-bar');
+
+      if (isBlocked) {
+        activeBar.classList.add('hidden');
+        blockedBar.classList.remove('hidden');
+      } else {
+        activeBar.classList.remove('hidden');
+        blockedBar.classList.add('hidden');
+      }
+    }
+
+    window.blockCurrentUser = function() {
+      if (!blockedUsers.includes(currentChatRecipient.userId)) {
+        blockedUsers.push(currentChatRecipient.userId);
+        localStorage.setItem('business_blocked_users', JSON.stringify(blockedUsers));
+      }
+      document.getElementById('chat-options-menu').classList.add('hidden');
+      updateBlockUI();
+    };
+
+    window.unblockCurrentUser = function() {
+      blockedUsers = blockedUsers.filter(id => id !== currentChatRecipient.userId);
+      localStorage.setItem('business_blocked_users', JSON.stringify(blockedUsers));
+      updateBlockUI();
+    };
+
+    window.handleMediaSelect = function(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          attachmentMediaBase64 = e.target.result;
+          document.getElementById('chat-media-thumb').src = attachmentMediaBase64;
+          document.getElementById('chat-attachment-preview-box').classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+
+    window.removeChatAttachment = function() {
+      attachmentMediaBase64 = "";
+      document.getElementById('chat-attachment-preview-box').classList.add('hidden');
+      document.getElementById('chat-media-input').value = "";
+    };
+
+    window.sendMessage = function() {
+      const input = document.getElementById('chat-input-text');
+      const text = input.value.trim();
+      if (!text && !attachmentMediaBase64) return;
+
+      const threadKey = [authUser.uid, currentChatRecipient.userId].sort().join('_');
+      if (!chatThreads[threadKey]) chatThreads[threadKey] = [];
+
+      chatThreads[threadKey].push({
+        senderId: authUser.uid,
+        text: text,
+        media: attachmentMediaBase64,
+        timestamp: new Date().toISOString()
+      });
+
+      localStorage.setItem('business_chat_threads', JSON.stringify(chatThreads));
+      input.value = '';
+      removeChatAttachment();
+      renderChatMessages();
+    };
+
+    function renderChatMessages() {
+      const container = document.getElementById('chat-messages-container');
+      container.innerHTML = '';
+
+      const threadKey = [authUser.uid, currentChatRecipient.userId].sort().join('_');
+      const messages = chatThreads[threadKey] || [];
+
+      messages.forEach(msg => {
+        const isMe = msg.senderId === authUser.uid;
+        const div = document.createElement('div');
+        div.className = `flex ${isMe ? 'justify-end' : 'justify-start'}`;
+
+        let mediaHtml = msg.media ? `<img src="${msg.media}" class="max-w-xs rounded-lg mb-1 object-cover" />` : '';
+        div.innerHTML = `
+          <div class="max-w-[75%] rounded-2xl px-4 py-2 text-sm ${isMe ? 'bg-blue-600 text-white rounded-br-none' : 'bg-white border border-gray-200 text-gray-900 rounded-bl-none'}">
+            ${mediaHtml}
+            ${msg.text ? `<p>${msg.text}</p>` : ''}
+          </div>
+        `;
+        container.appendChild(div);
+      });
+      container.scrollTop = container.scrollHeight;
+    }
+
+    window.toggleChatDrawer = function() {
+      document.getElementById('chat-drawer').classList.toggle('hidden');
+    };
+  </script>
+</body>
+</html>
