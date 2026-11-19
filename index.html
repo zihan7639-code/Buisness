@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Business Marketplace</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- React & Babel CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      background-color: #000;
+      overflow-x: hidden;
+    }
+    .font-cyber { font-family: 'Orbitron', sans-serif; }
+    .font-cyber-mono { font-family: 'Share Tech Mono', monospace; }
+    .scanline-overlay {
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 255, 65, 0.02) 2px,
+        rgba(0, 255, 65, 0.02) 4px
+      );
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useMemo } = React;
+
+    const SUB_STORAGE_KEY = 'ultra_sub_unlocked_v1';
+    const USER_STORAGE_KEY = 'business_auth_user_v1';
+    const USERS_STORAGE_KEY = 'business_users_list_v1';
+    const PRODUCTS_STORAGE_KEY = 'business_products_list_v1';
+    const MESSAGES_STORAGE_KEY = 'business_messages_list_v1';
+
+    // Initial Mock Data
+    const INITIAL_USERS = [
+      { uid: 'u_alex', username: 'Alex', password: 'password', photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150', blockedUsers: [] },
+      { uid: 'u_maya', username: 'Maya', password: 'password', photoURL: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150', blockedUsers: [] }
+    ];
+
+    const INITIAL_PRODUCTS = [
+      { id: 'p1', name: 'Camera', price: '450', currency: '$ USD', description: 'Retro 35mm compact digital camera in mint condition.', photoURL: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=600', userId: 'u_alex', username: 'Alex', userPhoto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150', createdAt: new Date().toISOString() },
+      { id: 'p2', name: 'Watch', price: '220', currency: '$ USD', description: 'Brushed stainless steel automatic wristwatch.', photoURL: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600', userId: 'u_maya', username: 'Maya', userPhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150', createdAt: new Date().toISOString() }
+    ];
+
+    // Helper: Local Storage wrappers
+    const getStored = (key, fallback) => {
+      try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : fallback;
+      } catch {
+        return fallback;
+      }
+    };
+    const setStored = (key, val) => localStorage.setItem(key, JSON.stringify(val));
+
+    // SVG Icons
+    const Icons = {
+      Search: (props) => <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" strokeWidth="2"/><path d="m21 21-4.3-4.3" strokeWidth="2"/></svg>,
+      Menu: (props) => <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/></svg>,
+      Plus: (props) => <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeWidth="2" d="M12 5v14M5 12h14"/></svg>,
+      PlusSquare: (props) => <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" strokeWidth="2"/><path strokeLinecap="round" strokeWidth="2" d="M12 8v8M8 12h8"/></svg>,
+      ChevronRight: (props) => <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeWidth="2" d="m9 18 6-6-6-6"/></svg>,
+      ChevronDown: (props) => <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeWidth="2" d="m6 9 6 6 6-6"/></svg>,
+      ArrowLeft: (props) => <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeWidth="2" d="m12 19-7-7 7-7M19 12H5"/></svg>,
+      X: (props) => <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeWidth="2" d="M18 6 6 18M6 6l12 12"/></svg>,
+      MessageCircle: (props) => <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth="2" d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>,
+      Pencil: (props) => <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth="2" d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>,
+      Trash2: (props) => <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth="2" d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>,
+      LogOut: (props) => <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeWidth="2" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>,
+      ZoomIn: (props) => <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" strokeWidth="2"/><path strokeWidth="2" d="m21 21-4.3-4.3M11 8v6M8 11h6"/></svg>,
+      Send: (props) => <svg {...props} viewBox="0 0 24 24" fill="currentColor"><path d="M3.478 2.405a.75.75 0 0 0-.926.94l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.405Z"/></svg>
+    };
+
+    /* --- SUBSCRIPTION GATE COMPONENT --- */
+    function SubscriptionGate({ onUnlocked }) {
+      const canvasRef = useRef(null);
+      const [step, setStep] = useState('init');
+      const [verifying, setVerifying] = useState(false);
+
+      useEffect(() => {
+        const timer = setTimeout(() => setStep('subscribe'), 1000);
+        return () => clearTimeout(timer);
+      }, []);
+
+      useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const drops = Array(Math.floor(canvas.width / 18)).fill(1);
+        const chars = '01100';
+
+        const id = setInterval(() => {
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.06)';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = '#00ff41';
+          ctx.font = '14px monospace';
+          for (let i = 0; i < drops.length; i++) {
+            ctx.fillText(chars[Math.floor(Math.random() * chars.length)], i * 18, drops[i] * 18);
+            if (drops[i] * 18 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+            drops[i]++;
+          }
+        }, 50);
+        return () => clearInterval(id);
+      }, []);
+
+      const handleSubscribe = () => {
+        setVerifying(true);
+        setTimeout(() => {
+          onUnlocked();
+        }, 1200);
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black p-4 select-none">
+          <canvas ref={canvasRef} className="fixed inset-0 opacity-20 pointer-events-none" />
+          <div className="relative z-10 w-full max-w-[420px] bg-black/90 border border-green-500 rounded-xl p-8 font-cyber-mono text-green-400 shadow-[0_0_30px_rgba(0,255,65,0.2)] text-center">
+            {step === 'init' ? (
+              <div>
+                <span className="text-4xl block mb-2 animate-pulse">⬡</span>
+                <h1 className="font-cyber text-lg font-bold">SYSTEM INITIALIZING</h1>
+                <p className="text-xs text-green-300/80 mt-1">Verifying Access Gate...</p>
+              </div>
+            ) : (
+              <div>
+                <span className="text-4xl block mb-2 text-red-500 animate-bounce">⚠</span>
+                <h1 className="font-cyber text-xl font-black text-red-500">SUB TO ULTRA</h1>
+                <p className="text-xs text-red-400 mt-1">Subscription Required for Access</p>
+                <button
+                  onClick={handleSubscribe}
+                  className="w-full py-3 px-4 mt-6 border border-red-500 bg-red-500/10 hover:bg-red-500/25 text-red-400 font-cyber font-bold text-sm tracking-widest rounded-lg transition"
+                >
+                  {verifying ? '[ VERIFYING ACCESS... ]' : '[ SUBSCRIBE TO UNLOCK ]'}
+                </button>
+                <p className="mt-3 text-[11px] text-zinc-500">Unlocks immediate access to Marketplace</p>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    /* --- AUTH MODAL (FIXED SIGN-IN & REGISTER) --- */
+    function AuthModal({ users, onSuccess, onRegisterUser }) {
+      const [mode, setMode] = useState('signin');
+      const [username, setUsername] = useState('');
+      const [password, setPassword] = useState('');
+      const [avatarData, setAvatarData] = useState('');
+      const [errorMsg, setErrorMsg] = useState('');
+
+      const handleAvatarChange = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => setAvatarData(reader.result);
+        reader.readAsDataURL(file);
+      };
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        setErrorMsg('');
+        const trimmed = username.trim();
+
+        if (trimmed.length < 2) {
+          setErrorMsg('Username must be at least 2 characters');
+          return;
+        }
+        if (password.length < 2) {
+          setErrorMsg('Password must be at least 2 characters');
+          return;
+        }
+
+        if (mode === 'signin') {
+          // Direct sign-in without avatar requirement
+          const found = users.find(u => u.username.toLowerCase() === trimmed.toLowerCase());
+          if (!found || found.password !== password) {
+            setErrorMsg('Account not found or incorrect credentials!');
+            return;
+          }
+          onSuccess(found);
+        } else {
+          // Registration
+          if (!avatarData) {
+            setErrorMsg('Please tap circle to select a profile picture.');
+            return;
+          }
+          const exists = users.some(u => u.username.toLowerCase() === trimmed.toLowerCase());
+          if (exists) {
+            setErrorMsg('Username is already taken. Try signing in.');
+            return;
+          }
+          const newUser = {
+            uid: `user_${Date.now()}`,
+            username: trimmed,
+            password: password,
+            photoURL: avatarData,
+            blockedUsers: [],
+            createdAt: new Date().toISOString()
+          };
+          onRegisterUser(newUser);
+          onSuccess(newUser);
+        }
+      };
+
+      return (
+        <div className="fixed inset-0 z-40 bg-black/95 backdrop-blur-md flex items-center justify-center p-4">
+          <form onSubmit={handleSubmit} className="bg-zinc-900 border border-green-500/40 rounded-2xl p-6 w-full max-w-sm text-center shadow-[0_0_40px_rgba(0,255,65,0.15)] space-y-4">
+            <div className="flex border-b border-zinc-800 pb-2">
+              <button
+                type="button"
+                onClick={() => { setMode('signin'); setErrorMsg(''); }}
+                className={`flex-1 py-1.5 text-xs font-bold font-cyber-mono uppercase ${mode === 'signin' ? 'text-green-400 border-b-2 border-green-400' : 'text-zinc-500'}`}
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                onClick={() => { setMode('register'); setErrorMsg(''); }}
+                className={`flex-1 py-1.5 text-xs font-bold font-cyber-mono uppercase ${mode === 'register' ? 'text-green-400 border-b-2 border-green-400' : 'text-zinc-500'}`}
+              >
+                Create Account
+              </button>
+            </div>
+
+            <h2 className="text-lg font-bold font-cyber-mono text-green-400">
+              {mode === 'signin' ? 'ACCOUNT SIGN IN' : 'NEW REGISTRATION'}
+            </h2>
+
+            {mode === 'register' && (
+              <div>
+                <label className="relative w-20 h-20 mx-auto rounded-full bg-zinc-800 border-2 border-green-500 overflow-hidden flex items-center justify-center cursor-pointer block hover:border-green-400">
+                  {avatarData ? (
+                    <img src={avatarData} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <Icons.Plus className="w-8 h-8 text-green-400" />
+                  )}
+                  <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+                </label>
+                <p className="text-[11px] text-zinc-400 mt-1 font-cyber-mono">Tap circle to add photo *</p>
+              </div>
+            )}
+
+            <div className="space-y-3 text-left">
+              <input
+                type="text"
+                placeholder="Username (e.g. Alex)"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full bg-black border border-zinc-700 rounded-lg px-3.5 py-2.5 text-white text-sm font-cyber-mono focus:outline-none focus:border-green-400"
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-black border border-zinc-700 rounded-lg px-3.5 py-2.5 text-white text-sm font-cyber-mono focus:outline-none focus:border-green-400"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg font-cyber-mono uppercase text-sm transition"
+            >
+              {mode === 'signin' ? 'Sign In & Enter' : 'Create Account'}
+            </button>
+
+            {errorMsg && <p className="text-xs text-red-400 font-cyber-mono">{errorMsg}</p>}
+
+            {mode === 'signin' && (
+              <p className="text-[11px] text-zinc-500 font-cyber-mono">
+                Default Demo: <b>Alex</b> / <b>password</b>
+              </p>
+            )}
+          </form>
+        </div>
+      );
+    }
+
+    /* --- TOP BAR --- */
+    function TopBar({ user, unreadCount, onOpenMenu, onOpenProfile, onOpenSearch }) {
+      return (
+        <header className="sticky top-0 z-40 flex items-center justify-between gap-4 px-4 py-2.5 bg-white border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <button onClick={onOpenMenu} className="relative p-2 rounded-full hover:bg-gray-100 text-gray-700">
+              <Icons.Menu className="w-6 h-6" />
+              {unreadCount > 0 && <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-600 rounded-full border-2 border-white" />}
+            </button>
+            <button onClick={onOpenProfile} className="flex items-center gap-2 hover:bg-gray-100 rounded-full pr-3">
+              <img src={user.photoURL} alt={user.username} className="w-8 h-8 rounded-full object-cover border border-gray-300" />
+              <span className="font-semibold text-gray-900 text-sm">{user.username}</span>
+            </button>
+            <span className="text-xs font-bold uppercase tracking-widest text-gray-400 pl-2 border-l border-gray-200">
+              business
+            </span>
+          </div>
+          <button onClick={onOpenSearch} className="p-2 rounded-full hover:bg-gray-100 text-gray-600">
+            <Icons.Search className="w-5 h-5" />
+          </button>
+        </header>
+      );
+    }
+
+    /* --- DASHBOARD VIEW --- */
+    function DashboardView({ currentUser, products, onOpenCreate, onSelectProduct }) {
+      const yourProducts = products.filter(p => p.userId === currentUser.uid);
+      const otherProducts = products.filter(p => p.userId !== currentUser.uid);
+
+      return (
+        <main className="max-w-5xl mx-auto px-4 py-6 space-y-8 bg-[#f8f9fa] min-h-[calc(100vh-60px)]">
+          {/* Your Products */}
+          <section>
+            <div className="flex items-center gap-1.5 mb-3">
+              <h2 className="text-base font-semibold text-gray-800">Your</h2>
+              <Icons.ChevronRight className="w-4 h-4 text-gray-500" />
+            </div>
+            <div className="flex gap-4 overflow-x-auto pb-2">
+              <button
+                onClick={onOpenCreate}
+                className="w-40 h-52 bg-white border-2 border-dashed border-blue-600 rounded-xl flex flex-col items-center justify-center gap-2 text-blue-600 hover:bg-blue-50/50 shrink-0 transition"
+              >
+                <Icons.PlusSquare className="w-8 h-8" />
+                <span className="text-xs font-semibold">Create</span>
+              </button>
+              {yourProducts.map(prod => (
+                <div
+                  key={prod.id}
+                  onClick={() => onSelectProduct(prod)}
+                  className="w-40 h-52 bg-white border border-gray-200 rounded-xl p-2 flex flex-col hover:-translate-y-0.5 hover:shadow-md transition cursor-pointer shrink-0"
+                >
+                  <img src={prod.photoURL} alt={prod.name} className="w-full h-32 object-cover rounded-lg bg-gray-100" />
+                  <div className="pt-2 text-center">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{prod.name}</p>
+                    <p className="text-xs font-bold text-blue-600 mt-0.5">{prod.currency} {prod.price}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Others Products */}
+          <section>
+            <div className="flex items-center gap-1.5 mb-3">
+              <h2 className="text-base font-semibold text-gray-800">Others</h2>
+              <Icons.ChevronDown className="w-4 h-4 text-gray-500" />
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {otherProducts.map(prod => (
+                <div
+                  key={prod.id}
+                  onClick={() => onSelectProduct(prod)}
+                  className="bg-white border border-gray-200 rounded-xl p-2.5 flex flex-col hover:-translate-y-0.5 hover:shadow-md transition cursor-pointer"
+                >
+                  <img src={prod.photoURL} alt={prod.name} className="w-full h-32 object-cover rounded-lg bg-gray-100" />
+                  <div className="pt-2">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{prod.name}</p>
+                    <p className="text-xs text-gray-500">{prod.username}</p>
+                    <p className="text-xs font-bold text-blue-600 mt-1">{prod.currency} {prod.price}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </main>
+      );
+    }
+
+    /* --- PRODUCT DETAIL VIEW --- */
+    function ProductDetailView({ product, currentUser, onBack, onChat, onDelete }) {
+      const isOwner = product.userId === currentUser.uid;
+
+      return (
+        <div className="min-h-[calc(100vh-60px)] bg-[#f8f9fa] px-4 py-6">
+          <div className="max-w-2xl mx-auto bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-4">
+            <div className="flex items-center gap-3 border-b border-gray-200 pb-3">
+              <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full">
+                <Icons.ArrowLeft className="w-5 h-5 text-gray-700" />
+              </button>
+              <h2 className="text-lg font-bold text-gray-900">{product.name}</h2>
+            </div>
+            <img src={product.photoURL} alt={product.name} className="w-full max-h-80 object-cover rounded-xl border border-gray-200" />
+            <div className="flex justify-between items-center">
+              <h1 className="text-2xl font-bold text-gray-900">{product.name}</h1>
+              <span className="text-xl font-bold text-blue-600">{product.currency} {product.price}</span>
+            </div>
+            <p className="text-gray-600 text-sm whitespace-pre-wrap">{product.description || 'No description provided.'}</p>
+            <div className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-xl">
+              <div className="flex items-center gap-3">
+                <img src={product.userPhoto} alt={product.username} className="w-10 h-10 rounded-full object-cover border" />
+                <div>
+                  <p className="text-xs text-gray-500">Seller</p>
+                  <p className="font-bold text-gray-900 text-sm">{product.username}</p>
+                </div>
+              </div>
+              {isOwner ? (
+                <button onClick={() => onDelete(product.id)} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-1.5">
+                  <Icons.Trash2 className="w-4 h-4" /> Delete
+                </button>
+              ) : (
+                <button onClick={() => onChat(product)} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-semibold flex items-center gap-2">
+                  <Icons.MessageCircle className="w-4 h-4" /> Chat
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* --- DIRECT CHAT VIEW --- */
+    function DirectChatView({ currentUser, recipient, messages, onSendMessage, onBack }) {
+      const [text, setText] = useState('');
+      const endRef = useRef(null);
+
+      useEffect(() => {
+        endRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, [messages]);
+
+      const handleSend = (e) => {
+        e.preventDefault();
+        if (!text.trim()) return;
+        onSendMessage({ senderId: currentUser.uid, recipientId: recipient.uid, text: text.trim(), timestamp: new Date().toISOString() });
+        setText('');
+      };
+
+      const threadMessages = messages.filter(
+        m => (m.senderId === currentUser.uid && m.recipientId === recipient.uid) ||
+             (m.senderId === recipient.uid && m.recipientId === currentUser.uid)
+      );
+
+      return (
+        <div className="h-[calc(100vh-60px)] flex flex-col bg-gray-100 max-w-2xl mx-auto border-x border-gray-200 bg-white">
+          <div className="flex items-center gap-3 p-3 border-b bg-white">
+            <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full"><Icons.ArrowLeft className="w-5 h-5 text-gray-700" /></button>
+            <img src={recipient.photoURL} alt={recipient.username} className="w-9 h-9 rounded-full object-cover border" />
+            <h3 className="font-bold text-gray-900">{recipient.username}</h3>
+          </div>
+          <div className="flex-1 p-4 space-y-3 overflow-y-auto bg-gray-50">
+            {threadMessages.length === 0 ? (
+              <p className="text-center text-xs text-gray-400 mt-10">Start the conversation with {recipient.username}!</p>
+            ) : (
+              threadMessages.map((m, idx) => {
+                const isMe = m.senderId === currentUser.uid;
+                return (
+                  <div key={idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm ${isMe ? 'bg-blue-600 text-white rounded-br-none' : 'bg-white border text-gray-800 rounded-bl-none'}`}>
+                      <p>{m.text}</p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+            <div ref={endRef} />
+          </div>
+          <form onSubmit={handleSend} className="p-3 border-t bg-white flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Type message..."
+              value={text}
+              onChange={e => setText(e.target.value)}
+              className="flex-1 bg-gray-100 border rounded-full px-4 py-2 text-sm focus:outline-none focus:border-blue-500"
+            />
+            <button type="submit" className="w-10 h-10 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center">
+              <Icons.Send className="w-4 h-4 ml-0.5" />
+            </button>
+          </form>
+        </div>
+      );
+    }
+
+    /* --- CREATE PRODUCT MODAL --- */
+    function CreateProductModal({ open, onClose, onSave }) {
+      const [name, setName] = useState('');
+      const [price, setPrice] = useState('');
+      const [currency, setCurrency] = useState('$ USD');
+      const [description, setDescription] = useState('');
+      const [photoURL, setPhotoURL] = useState('');
+
+      if (!open) return null;
+
+      const handlePhoto = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => setPhotoURL(reader.result);
+        reader.readAsDataURL(file);
+      };
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!name || !price || !photoURL) return;
+        onSave({ name, price, currency, description, photoURL });
+        setName(''); setPrice(''); setDescription(''); setPhotoURL('');
+        onClose();
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <form onSubmit={handleSubmit} className="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl space-y-4">
+            <div className="flex justify-between items-center border-b pb-2">
+              <h2 className="text-lg font-bold text-gray-900">Create Product</h2>
+              <button type="button" onClick={onClose}><Icons.X className="w-5 h-5 text-gray-500" /></button>
+            </div>
+            <input
+              type="text"
+              placeholder="Product Name (2-8 chars)"
+              maxLength={8}
+              value={name}
+              onChange={e => setName(e.target.value)}
+              required
+              className="w-full border rounded-lg p-2.5 text-sm"
+            />
+            <div className="flex gap-2">
+              <select value={currency} onChange={e => setCurrency(e.target.value)} className="border rounded-lg p-2.5 text-sm bg-white">
+                <option>$ USD</option>
+                <option>৳ TK</option>
+                <option>€ EUR</option>
+              </select>
+              <input
+                type="number"
+                placeholder="Price"
+                value={price}
+                onChange={e => setPrice(e.target.value)}
+                required
+                className="flex-1 border rounded-lg p-2.5 text-sm"
+              />
+            </div>
+            <textarea
+              placeholder="Description..."
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              className="w-full border rounded-lg p-2.5 text-sm h-24"
+            />
+            <label className="border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500">
+              {photoURL ? (
+                <img src={photoURL} alt="Preview" className="h-32 object-cover rounded-md" />
+              ) : (
+                <span className="text-xs text-gray-500">Click to upload product picture</span>
+              )}
+              <input type="file" accept="image/*" onChange={handlePhoto} className="hidden" />
+            </label>
+            <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg text-sm">
+              Publish Product
+            </button>
+          </form>
+        </div>
+      );
+    }
+
+    /* --- MAIN APP --- */
+    function App() {
+      const [subUnlocked, setSubUnlocked] = useState(() => getStored(SUB_STORAGE_KEY, false));
+      const [users, setUsers] = useState(() => getStored(USERS_STORAGE_KEY, INITIAL_USERS));
+      const [currentUser, setCurrentUser] = useState(() => getStored(USER_STORAGE_KEY, null));
+      const [products, setProducts] = useState(() => getStored(PRODUCTS_STORAGE_KEY, INITIAL_PRODUCTS));
+      const [messages, setMessages] = useState(() => getStored(MESSAGES_STORAGE_KEY, []));
+
+      const [view, setView] = useState('dashboard');
+      const [selectedProduct, setSelectedProduct] = useState(null);
+      const [chatPeer, setChatPeer] = useState(null);
+      const [createModalOpen, setCreateModalOpen] = useState(false);
+      const [searchQuery, setSearchQuery] = useState('');
+      const [searchOpen, setSearchOpen] = useState(false);
+
+      // Save state
+      useEffect(() => setStored(USERS_STORAGE_KEY, users), [users]);
+      useEffect(() => setStored(PRODUCTS_STORAGE_KEY, products), [products]);
+      useEffect(() => setStored(MESSAGES_STORAGE_KEY, messages), [messages]);
+      useEffect(() => setStored(USER_STORAGE_KEY, currentUser), [currentUser]);
+
+      const handleSubUnlock = () => {
+        setStored(SUB_STORAGE_KEY, true);
+        setSubUnlocked(true);
+      };
+
+      const handleSignOut = () => {
+        setCurrentUser(null);
+        localStorage.removeItem(USER_STORAGE_KEY);
+        setView('dashboard');
+      };
+
+      const handleCreateProduct = (newProd) => {
+        const product = {
+          id: `p_${Date.now()}`,
+          ...newProd,
+          userId: currentUser.uid,
+          username: currentUser.username,
+          userPhoto: currentUser.photoURL,
+          createdAt: new Date().toISOString()
+        };
+        setProducts([product, ...products]);
+      };
+
+      const handleDeleteProduct = (id) => {
+        setProducts(products.filter(p => p.id !== id));
+        setView('dashboard');
+      };
+
+      const handleSendMessage = (msg) => {
+        setMessages(prev => [...prev, msg]);
+      };
+
+      const startChat = (prod) => {
+        const peer = users.find(u => u.uid === prod.userId) || {
+          uid: prod.userId,
+          username: prod.username,
+          photoURL: prod.userPhoto
+        };
+        setChatPeer(peer);
+        setView('chat');
+      };
+
+      return (
+        <div className="min-h-screen bg-[#f8f9fa] text-gray-900">
+          {!subUnlocked && <SubscriptionGate onUnlocked={handleSubUnlock} />}
+
+          {subUnlocked && !currentUser && (
+            <AuthModal
+              users={users}
+              onSuccess={(user) => {
+                setCurrentUser(user);
+                setView('dashboard');
+              }}
+              onRegisterUser={(newUser) => {
+                setUsers(prev => [...prev, newUser]);
+              }}
+            />
+          )}
+
+          {subUnlocked && currentUser && (
+            <>
+              <TopBar
+                user={currentUser}
+                unreadCount={0}
+                onOpenMenu={() => setView('dashboard')}
+                onOpenProfile={handleSignOut}
+                onOpenSearch={() => setSearchOpen(true)}
+              />
+
+              {view === 'dashboard' && (
+                <DashboardView
+                  currentUser={currentUser}
+                  products={products}
+                  onOpenCreate={() => setCreateModalOpen(true)}
+                  onSelectProduct={(p) => {
+                    setSelectedProduct(p);
+                    setView('detail');
+                  }}
+                />
+              )}
+
+              {view === 'detail' && selectedProduct && (
+                <ProductDetailView
+                  product={selectedProduct}
+                  currentUser={currentUser}
+                  onBack={() => setView('dashboard')}
+                  onChat={startChat}
+                  onDelete={handleDeleteProduct}
+                />
+              )}
+
+              {view === 'chat' && chatPeer && (
+                <DirectChatView
+                  currentUser={currentUser}
+                  recipient={chatPeer}
+                  messages={messages}
+                  onSendMessage={handleSendMessage}
+                  onBack={() => setView('dashboard')}
+                />
+              )}
+
+              <CreateProductModal
+                open={createModalOpen}
+                onClose={() => setCreateModalOpen(false)}
+                onSave={handleCreateProduct}
+              />
+
+              {/* Simple Search Modal */}
+              {searchOpen && (
+                <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+                  <div className="bg-white rounded-xl p-5 w-full max-w-sm space-y-3">
+                    <div className="flex justify-between items-center">
+                      <h3 className="font-bold">Search Marketplace</h3>
+                      <button onClick={() => setSearchOpen(false)}><Icons.X className="w-5 h-5 text-gray-500" /></button>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Search items..."
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      className="w-full border rounded-lg p-2.5 text-sm"
+                    />
+                    <div className="max-h-52 overflow-y-auto space-y-2">
+                      {products
+                        .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                        .map(p => (
+                          <div
+                            key={p.id}
+                            onClick={() => {
+                              setSelectedProduct(p);
+                              setView('detail');
+                              setSearchOpen(false);
+                            }}
+                            className="p-2 border rounded-lg flex items-center gap-3 cursor-pointer hover:bg-gray-50"
+                          >
+                            <img src={p.photoURL} alt={p.name} className="w-10 h-10 object-cover rounded" />
+                            <div>
+                              <p className="font-semibold text-sm">{p.name}</p>
+                              <p className="text-xs text-blue-600 font-bold">{p.currency} {p.price}</p>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+  </html>
