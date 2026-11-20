@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Business Marketplace</title>
+
+  <style>
+    /* Complete Built-in Styles (Zero CDN Dependencies - 100% Mobile & Wasmer Proof) */
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+    html, body {
+      background-color: #f8f9fa;
+      color: #111827;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    input, button, select, textarea { font-family: inherit; font-size: inherit; }
+    .hidden { display: none !important; }
+    .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Custom Notification Badges */
+    .badge-dot {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      background: #ef4444;
+      border-radius: 50%;
+      border: 1.5px solid #ffffff;
+      box-shadow: 0 0 5px rgba(239,68,68,0.8);
+      animation: pulse-dot 1.4s infinite;
+      vertical-align: middle;
+    }
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: #ef4444;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1;
+      padding: 2px 6px;
+      border-radius: 9999px;
+      border: 1.5px solid #ffffff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      vertical-align: middle;
+      animation: pulse-dot 1.4s infinite;
+    }
+    .badge-pill-dot { width: 4px; height: 4px; background: #fff; border-radius: 50%; display: inline-block; }
+    @keyframes pulse-dot { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+
+    /* Layout Utilities */
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .items-center { align-items: center; }
+    .justify-center { justify-content: center; }
+    .justify-between { justify-content: space-between; }
+    .flex-1 { flex: 1 1 0%; }
+    .relative { position: relative; }
+    .absolute { position: absolute; }
+    .fixed { position: fixed; }
+    .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+    .z-40 { z-index: 40; }
+    .z-50 { z-index: 50; }
+    .z-60 { z-index: 60; }
+    .w-full { width: 100%; }
+
+    /* TopBar & Buttons */
+    header {
+      position: sticky; top: 0; z-index: 40;
+      background: #ffffff; border-bottom: 1px solid #e5e7eb;
+      padding: 10px 16px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .icon-btn {
+      background: transparent; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      width: 40px; height: 40px; border-radius: 50%; color: #374151; position: relative; padding: 0;
+    }
+    .icon-btn:hover { background: #f3f4f6; }
+
+    /* Drawers & Modals */
+    .overlay {
+      position: fixed; inset: 0; z-index: 50;
+      background: rgba(0, 0, 0, 0.5); display: flex;
+    }
+    .drawer-left {
+      width: 82%; max-width: 320px; height: 100%; background: #ffffff;
+      display: flex; flex-direction: column; padding: 16px; box-shadow: 2px 0 12px rgba(0,0,0,0.15);
+    }
+    .drawer-right {
+      width: 82%; max-width: 320px; height: 100%; background: #ffffff;
+      display: flex; flex-direction: column; padding: 20px; box-shadow: -2px 0 12px rgba(0,0,0,0.15);
+    }
+    .modal-box {
+      width: 100%; max-width: 380px; background: #ffffff; border-radius: 16px;
+      padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.25); display: flex; flex-direction: column; gap: 12px;
+    }
+    .card {
+      background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px;
+      padding: 10px; cursor: pointer; display: flex; flex-direction: column;
+      transition: transform 0.15s ease;
+    }
+    .card:hover { transform: translateY(-2px); }
+    .prod-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+    }
+    @media (min-width: 640px) { .prod-grid { grid-template-columns: repeat(4, 1fr); } }
+  </style>
+</head>
+<body>
+
+  <!-- 1. SUBSCRIPTION GATE -->
+  <div id="screen-gate" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: #000000;">
+    <div style="width: 100%; max-width: 380px; background: #0a0a0a; border: 1px solid #22c55e; border-radius: 16px; padding: 32px 24px; text-align: center; color: #22c55e; box-shadow: 0 0 30px rgba(34,197,94,0.2);">
+      <span style="font-size: 36px; display: block; margin-bottom: 8px; color: #ef4444;">⚠</span>
+      <h1 style="font-size: 20px; font-weight: 900; color: #ef4444; letter-spacing: 2px;">SUB TO ULTRA</h1>
+      <p style="font-size: 12px; color: #fca5a5; margin-top: 6px;">Subscription Required for Access</p>
+      <button onclick="handleGoToUltra()" style="width: 100%; margin-top: 24px; padding: 14px; background: rgba(239,68,68,0.15); border: 1px solid #ef4444; color: #fca5a5; font-weight: bold; font-size: 13px; letter-spacing: 2px; border-radius: 8px; cursor: pointer;">
+        [ SIGN IN TO ULTRA ]
+      </button>
+      <p style="margin-top: 14px; font-size: 11px; color: #9ca3af;">Opens Ultra-Gaming-2.O-Official on YouTube to unlock access</p>
+    </div>
+  </div>
+
+  <!-- 2. AUTH MODAL (Sign In / Register) -->
+  <div id="screen-auth" class="fixed inset-0 z-40 flex items-center justify-center p-4 hidden" style="background: rgba(0,0,0,0.95);">
+    <div style="width: 100%; max-width: 360px; background: #18181b; border: 1px solid rgba(34,197,94,0.3); border-radius: 16px; padding: 24px; text-align: center; box-shadow: 0 0 30px rgba(34,197,94,0.15);">
+      <div style="display: flex; border-bottom: 1px solid #27272a; padding-bottom: 8px; margin-bottom: 16px;">
+        <button id="tab-signin" onclick="setAuthMode('signin')" style="flex: 1; padding: 6px; font-size: 12px; font-weight: bold; text-transform: uppercase; border: none; background: transparent; cursor: pointer; color: #4ade80; border-bottom: 2px solid #4ade80;">Sign In</button>
+        <button id="tab-register" onclick="setAuthMode('register')" style="flex: 1; padding: 6px; font-size: 12px; font-weight: bold; text-transform: uppercase; border: none; background: transparent; cursor: pointer; color: #71717a;">Create Account</button>
+      </div>
+      <h2 id="auth-title" style="font-size: 16px; font-weight: bold; color: #4ade80; margin-bottom: 12px;">ACCOUNT SIGN IN</h2>
+      
+      <div id="auth-avatar-section" class="hidden" style="margin-bottom: 14px;">
+        <label style="position: relative; width: 74px; height: 74px; margin: 0 auto; border-radius: 50%; background: #27272a; border: 2px solid #22c55e; overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+          <img id="authAvatarPreview" src="https://api.dicebear.com/7.x/avataaars/svg?seed=User" style="width: 100%; height: 100%; object-fit: cover;" />
+          <input type="file" accept="image/*" onchange="previewAuthAvatar(event)" style="display: none;" />
+        </label>
+        <p style="font-size: 11px; color: #a1a1aa; margin-top: 6px;">Tap circle to add photo *</p>
+      </div>
+
+      <form onsubmit="handleAuthSubmit(event)" style="display: flex; flex-direction: column; gap: 12px; text-align: left;">
+        <input id="authUsername" type="text" placeholder="Username (Unique)" required style="width: 100%; background: #000; border: 1px solid #3f3f46; border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 14px; outline: none;" />
+        <input id="authPassword" type="password" placeholder="Password" required style="width: 100%; background: #000; border: 1px solid #3f3f46; border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 14px; outline: none;" />
+        <button id="auth-submit-btn" type="submit" style="width: 100%; background: #2563eb; color: #fff; font-weight: bold; padding: 11px; border-radius: 8px; border: none; font-size: 13px; text-transform: uppercase; cursor: pointer; margin-top: 4px;">
+          Sign In & Enter
+        </button>
+      </form>
+      <div id="authError" style="font-size: 12px; color: #f87171; min-height: 18px; margin-top: 10px; font-weight: bold;"></div>
+    </div>
+  </div>
+
+  <!-- 3. MAIN APPLICATION SCREEN -->
+  <div id="screen-main" class="hidden">
+    <!-- TopBar with Dynamic Red Dot & Number Badge -->
+    <header>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button onclick="openFriendsDrawer()" class="icon-btn" title="Friends">
+          <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          <span id="topbar-unread-badge" style="position: absolute; top: -3px; right: -5px; pointer-events: none;"></span>
+        </button>
+
+        <button onclick="openProfileDrawer()" style="display: flex; align-items: center; gap: 8px; background: transparent; border: none; cursor: pointer; padding-right: 8px;">
+          <img id="topbar-user-photo" src="" alt="User" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid #d1d5db;" />
+          <span id="topbar-user-name" class="truncate" style="font-size: 14px; font-weight: bold; color: #111827; max-width: 120px;"></span>
+        </button>
+        <span style="font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px; color: #9ca3af; padding-left: 6px; border-left: 1px solid #e5e7eb;">business</span>
+      </div>
+      <button onclick="openSearchModal()" class="icon-btn">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" stroke-width="2"/><path d="m21 21-4.3-4.3" stroke-width="2"/></svg>
+      </button>
+    </header>
+
+    <!-- DASHBOARD VIEW -->
+    <div id="view-dashboard" style="max-width: 980px; margin: 0 auto; padding: 24px 16px; min-height: calc(100vh - 60px);">
+      <section style="margin-bottom: 32px;">
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
+          <h2 style="font-size: 16px; font-weight: bold; color: #1f2937;">Your</h2>
+          <svg width="16" height="16" fill="none" stroke="#6b7280" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="m9 18 6-6-6-6"/></svg>
+        </div>
+        <div style="display: flex; gap: 14px; overflow-x: auto; padding-bottom: 8px;">
+          <button onclick="openCreateModal()" style="width: 150px; height: 190px; background: #fff; border: 2px dashed #2563eb; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #2563eb; cursor: pointer; flex-shrink: 0;">
+            <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" stroke-width="2"/><path stroke-linecap="round" stroke-width="2" d="M12 8v8M8 12h8"/></svg>
+            <span style="font-size: 12px; font-weight: bold;">Create</span>
+          </button>
+          <div id="your-products-list" style="display: flex; gap: 14px;"></div>
+        </div>
+      </section>
+
+      <section>
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
+          <h2 style="font-size: 16px; font-weight: bold; color: #1f2937;">Others</h2>
+          <svg width="16" height="16" fill="none" stroke="#6b7280" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <div id="other-products-empty" class="hidden" style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 36px 16px; text-align: center; font-size: 14px; color: #9ca3af;">
+          No products from other sellers yet.
+        </div>
+        <div id="other-products-grid" class="prod-grid"></div>
+      </section>
+    </div>
+
+    <!-- PRODUCT DETAIL VIEW -->
+    <div id="view-detail" class="hidden" style="min-height: calc(100vh - 60px); padding: 24px 16px;">
+      <div style="max-width: 640px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 20px;">
+        <div style="display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px; margin-bottom: 16px;">
+          <button onclick="setView('dashboard')" class="icon-btn">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="m12 19-7-7 7-7M19 12H5"/></svg>
+          </button>
+          <h2 id="detail-prod-name-title" class="truncate" style="font-size: 18px; font-weight: bold; color: #111827;"></h2>
+        </div>
+        <!-- Tap Photo to Zoom -->
+        <img id="detail-prod-photo" src="" alt="Product" onclick="openPhotoModal(this.src)" style="width: 100%; max-height: 320px; object-fit: cover; border-radius: 12px; border: 1px solid #e5e7eb; cursor: zoom-in;" title="Click photo to enlarge" />
+        <div style="display: flex; justify-content: space-between; align-items: center; margin: 16px 0 8px 0;">
+          <h1 id="detail-prod-name" style="font-size: 22px; font-weight: bold; color: #111827;"></h1>
+          <span id="detail-prod-price" style="font-size: 20px; font-weight: bold; color: #2563eb;"></span>
+        </div>
+        <p id="detail-prod-desc" style="font-size: 14px; color: #4b5563; line-height: 1.5; white-space: pre-wrap; margin-bottom: 20px;"></p>
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <img id="detail-seller-photo" src="" alt="Seller" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid #d1d5db;" />
+            <div>
+              <p style="font-size: 11px; color: #6b7280;">Seller</p>
+              <p id="detail-seller-name" style="font-size: 14px; font-weight: bold; color: #111827;"></p>
+            </div>
+          </div>
+          <div id="detail-action-buttons"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DIRECT CHAT VIEW -->
+    <div id="view-chat" class="hidden" style="height: calc(100vh - 60px); display: flex; flex-direction: column; background: #ffffff; max-width: 680px; margin: 0 auto; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid #e5e7eb; position: relative;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button onclick="setView('dashboard')" class="icon-btn">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="m12 19-7-7 7-7M19 12H5"/></svg>
+          </button>
+          <img id="chat-recipient-photo" src="" alt="User" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid #e5e7eb;" />
+          <h3 id="chat-recipient-name" style="font-size: 15px; font-weight: bold; color: #111827;"></h3>
+        </div>
+        <div style="position: relative;">
+          <button onclick="toggleChatMenu()" class="icon-btn">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg>
+          </button>
+          <div id="chat-menu-dropdown" class="hidden" style="position: absolute; right: 0; top: 42px; background: #ffffff; border: 1px solid #e5e7eb; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 10px; width: 130px; z-index: 50; overflow: hidden;">
+            <button id="chat-block-btn" onclick="toggleBlockUser()" style="width: 100%; text-align: left; padding: 10px 14px; font-size: 13px; font-weight: bold; border: none; background: transparent; cursor: pointer;">
+              Block
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="messagesStream" style="flex: 1; padding: 16px; overflow-y: auto; background: #f9fafb; display: flex; flex-direction: column; gap: 10px;"></div>
+
+      <div id="stagedMediaTray" class="hidden" style="padding: 8px 12px; background: #f3f4f6; border-top: 1px solid #e5e7eb; display: flex; gap: 8px; overflow-x: auto;"></div>
+
+      <div id="chat-blocked-notice" class="hidden" style="padding: 16px; background: #f3f4f6; text-align: center; font-size: 14px; font-weight: bold; color: #dc2626; border-top: 1px solid #e5e7eb;">
+        You're Blocked
+      </div>
+
+      <div id="chat-unblock-bar" class="hidden" style="padding: 12px 18px; background: #f3f4f6; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #e5e7eb;">
+        <span style="font-size: 13px; color: #4b5563;">You have blocked this user.</span>
+        <button onclick="toggleBlockUser()" style="background: transparent; border: none; color: #2563eb; font-weight: bold; font-size: 13px; cursor: pointer;">Unblock</button>
+      </div>
+
+      <form id="chat-form" onsubmit="handleSendMessage(event)" style="padding: 10px 14px; border-top: 1px solid #e5e7eb; background: #ffffff; display: flex; align-items: center; gap: 8px;">
+        <label class="icon-btn" title="Add photos or videos">
+          <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M12 5v14M5 12h14"/></svg>
+          <input type="file" multiple accept="image/*,video/*" onchange="handleChatFiles(event)" style="display: none;" />
+        </label>
+        <input id="chatTextInput" type="text" placeholder="Type a message..." style="flex: 1; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 9999px; padding: 10px 16px; font-size: 14px; outline: none; color: #111827;" />
+        <button type="submit" style="width: 40px; height: 40px; border-radius: 50%; background: #2563eb; color: #ffffff; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3.478 2.405a.75.75 0 0 0-.926.94l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.405Z"/></svg>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. FRIENDS DRAWER (Shows accounts with unread red dots & numbers) -->
+  <div id="drawer-friends" class="overlay hidden" onclick="closeFriendsDrawer()">
+    <div class="drawer-left" onclick="event.stopPropagation()">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px; margin-bottom: 12px;">
+        <h2 style="font-size: 18px; font-weight: 900; color: #111827;">Friends</h2>
+        <button onclick="closeFriendsDrawer()" class="icon-btn">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="friends-list-container" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;"></div>
+      
+      <!-- Built-in notification test tool -->
+      <div style="padding-top: 12px; border-top: 1px solid #e5e7eb; margin-top: 8px; display: flex; flex-direction: column; gap: 6px;">
+        <p style="font-size: 11px; color: #9ca3af; text-align: center; font-weight: bold;">TEST NOTIFICATION BADGES:</p>
+        <div style="display: flex; gap: 6px;">
+          <button onclick="simulateIncomingMessage(1)" style="flex: 1; padding: 6px; font-size: 11px; background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; border-radius: 6px; font-weight: bold; cursor: pointer;">+1 Dot</button>
+          <button onclick="simulateIncomingMessage(5)" style="flex: 1; padding: 6px; font-size: 11px; background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; border-radius: 6px; font-weight: bold; cursor: pointer;">+5 Badge</button>
+          <button onclick="simulateIncomingMessage(105)" style="flex: 1; padding: 6px; font-size: 11px; background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; border-radius: 6px; font-weight: bold; cursor: pointer;">99+ Badge</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. ACCOUNT PROFILE DRAWER -->
+  <div id="drawer-profile" class="overlay hidden" style="justify-content: flex-end;" onclick="closeProfileDrawer()">
+    <div class="drawer-right" onclick="event.stopPropagation()">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px; margin-bottom: 20px;">
+        <span style="font-size: 15px; font-weight: bold; color: #1f2937;">Account Profile</span>
+        <button onclick="closeProfileDrawer()" class="icon-btn" title="Go Back">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px;">
+        <div id="profile-view-box">
+          <img id="profile-drawer-photo" src="" alt="Profile" style="width: 88px; height: 88px; border-radius: 50%; object-fit: cover; border: 3px solid #2563eb; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" />
+          <h3 id="profile-drawer-name" style="font-size: 18px; font-weight: bold; color: #111827; margin-top: 10px;"></h3>
+        </div>
+        <div id="profile-edit-box" class="hidden" style="width: 100%;">
+          <label style="position: relative; width: 88px; height: 88px; margin: 0 auto; border-radius: 50%; border: 2px dashed #2563eb; overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+            <img id="editProfilePicPreview" src="" style="width: 100%; height: 100%; object-fit: cover;" />
+            <input type="file" accept="image/*" onchange="previewEditPhoto(event)" style="display: none;" />
+          </label>
+          <input id="editUsernameInput" type="text" value="" style="border: 1px solid #d1d5db; border-radius: 8px; padding: 8px; font-size: 14px; text-align: center; font-weight: bold; width: 100%; margin-top: 10px; outline: none;" />
+        </div>
+        <div style="width: 100%; display: flex; flex-direction: column; gap: 10px; margin-top: 14px;">
+          <button id="btn-edit-profile" onclick="startEditingProfile()" style="width: 100%; padding: 10px; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; font-weight: 600; border-radius: 10px; cursor: pointer;">Edit Profile</button>
+          <button id="btn-save-profile" onclick="saveProfileChanges()" class="hidden" style="width: 100%; padding: 11px; background: #2563eb; color: #fff; font-weight: bold; border-radius: 10px; border: none; cursor: pointer;">Save Changes</button>
+          <button onclick="resetProfileForm()" style="width: 100%; padding: 10px; background: #f9fafb; color: #374151; border: 1px solid #e5e7eb; font-weight: 600; border-radius: 10px; cursor: pointer;">Reset</button>
+          <button onclick="handleLogOut()" style="width: 100%; padding: 10px; background: #f3f4f6; color: #1f2937; border: 1px solid #d1d5db; font-weight: 600; border-radius: 10px; cursor: pointer;">Log Out</button>
+          <button onclick="handleDeleteAccount()" style="width: 100%; padding: 10px; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-weight: 600; border-radius: 10px; cursor: pointer;">Delete Account</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. CREATE PRODUCT MODAL -->
+  <div id="modal-create" class="overlay hidden" style="align-items: center; justify-content: center; padding: 16px;">
+    <form onsubmit="handleCreateProductSubmit(event)" class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px;">
+        <h2 style="font-size: 16px; font-weight: bold; color: #111827;">Create Product</h2>
+        <button type="button" onclick="closeCreateModal()" class="icon-btn">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <input id="newProdName" type="text" placeholder="Product Name (2-8 chars)" maxlength="8" required style="width: 100%; border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; font-size: 14px; outline: none;" />
+      <div style="display: flex; gap: 8px;">
+        <select id="newProdCurrency" style="border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; font-size: 14px; background: #fff;">
+          <option>$ USD</option>
+          <option>৳ TK</option>
+          <option>€ EUR</option>
+        </select>
+        <input id="newProdPrice" type="number" placeholder="Price" required style="flex: 1; border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; font-size: 14px; outline: none;" />
+      </div>
+      <textarea id="newProdDesc" placeholder="Description..." style="width: 100%; border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; font-size: 14px; height: 80px; outline: none;"></textarea>
+      <label style="border: 2px dashed #d1d5db; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; text-align: center;">
+        <img id="newProdPhotoPreview" style="height: 120px; object-fit: cover; border-radius: 8px; display: none;" />
+        <span id="newProdPhotoText" style="font-size: 12px; color: #6b7280;">Click to upload product photo *</span>
+        <input id="newProdFileInput" type="file" accept="image/*" onchange="previewProductPhoto(event)" style="display: none;" required />
+      </label>
+      <button type="submit" style="width: 100%; background: #2563eb; color: #fff; font-weight: bold; padding: 11px; border-radius: 8px; border: none; font-size: 14px; cursor: pointer;">Publish Product</button>
+    </form>
+  </div>
+
+  <!-- 7. SEARCH MODAL -->
+  <div id="modal-search" class="overlay hidden" style="align-items: center; justify-content: center; padding: 16px;">
+    <div class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-weight: bold; font-size: 15px;">Search Products</h3>
+        <button onclick="closeSearchModal()" class="icon-btn">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <input id="searchInput" type="text" oninput="handleSearch(event)" placeholder="Search products..." style="width: 100%; border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; font-size: 14px; outline: none;" />
+      <div id="searchResults" style="max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;"></div>
+    </div>
+  </div>
+
+  <!-- 8. PHOTO ZOOM LIGHTBOX (Cross icon on the right side) -->
+  <div id="modal-photo" class="fixed inset-0 z-60 flex items-center justify-center p-4 hidden" style="background: rgba(0,0,0,0.95);" onclick="closePhotoModal()">
+    <button onclick="closePhotoModal()" style="position: absolute; top: 18px; right: 18px; width: 44px; height: 44px; background: rgba(255,255,255,0.25); color: #ffffff; border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 70;" title="Close photo">
+      <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+    <img id="modal-photo-img" src="" style="max-width: 92vw; max-height: 86vh; object-fit: contain; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);" onclick="event.stopPropagation()" />
+  </div>
+
+  <!-- SCRIPT ENGINE -->
+  <script>
+    var SUB_URL = "https://www.youtube.com/@Ultra-Gaming-2.O-Official";
+    var K_SUB = "app_biz_gate_ok";
+    var K_USER = "app_biz_auth_user";
+    var K_USERS = "app_biz_all_users";
+    var K_PRODUCTS = "app_biz_all_prods";
+    var K_MESSAGES = "app_biz_all_msgs";
+
+    var MemoryStore = {};
+    function getStored(key, fallback) {
+      try {
+        if (typeof window !== "undefined" && window.localStorage) {
+          var item = localStorage.getItem(key);
+          if (item !== null && item !== undefined) {
+            var parsed = JSON.parse(item);
+            return parsed !== null && parsed !== undefined ? parsed : fallback;
+          }
+        }
+      } catch (e) {}
+      return MemoryStore[key] !== undefined ? MemoryStore[key] : fallback;
+    }
+
+    function setStored(key, val) {
+      try {
+        if (typeof window !== "undefined" && window.localStorage) {
+          localStorage.setItem(key, JSON.stringify(val));
+        }
+      } catch (e) {}
+      MemoryStore[key] = val;
+    }
+
+    // Load registered accounts (No bots or fake accounts)
+    var rawUsers = getStored(K_USERS, []);
+    var users = Array.isArray(rawUsers) ? rawUsers.filter(function(u) { return u && u.uid && u.username && u.uid !== 'u_alex' && u.uid !== 'u_maya'; }) : [];
+
+    // Session: Persists across refresh (never logs out on reload)
+    var rawUser = getStored(K_USER, null);
+    var currentUser = (rawUser && rawUser.uid && rawUser.username && rawUser.uid !== 'u_alex' && rawUser.uid !== 'u_maya') ? rawUser : null;
+
+    if (currentUser) {
+      var sync = users.find(function(u) { return u && u.uid === currentUser.uid; });
+      if (sync) currentUser = sync;
+    }
+
+    var subUnlocked = getStored(K_SUB, false);
+    if (currentUser) {
+      subUnlocked = true;
+      setStored(K_SUB, true);
+    }
+
+    var rawProducts = getStored(K_PRODUCTS, []);
+    var products = Array.isArray(rawProducts) ? rawProducts.filter(function(p) { return p && p.id; }) : [];
+
+    var rawMessages = getStored(K_MESSAGES, []);
+    var messages = Array.isArray(rawMessages) ? rawMessages.filter(function(m) { return m && m.id; }) : [];
+
+    var currentView = "dashboard";
+    var selectedProduct = null;
+    var chatPeer = null;
+    var authMode = "signin";
+    var chatMenuOpen = false;
+    var stagedMedia = [];
+    var isEditingProfile = false;
+
+    // Badges helper
+    function getBadgeHTML(count) {
+      if (!count || count <= 0) return "";
+      if (count === 1) {
+        return '<span class="badge-dot" title="1 new message"></span>';
+      }
+      var num = count > 99 ? "99+" : String(count);
+      return (
+        '<span class="badge-pill">' +
+          '<span class="badge-pill-dot"></span>' +
+          '<span>' + num + '</span>' +
+        '</span>'
+      );
+    }
+
+    // Safe UI Rendering
+    function updateUI() {
+      var screenGate = document.getElementById("screen-gate");
+      var screenAuth = document.getElementById("screen-auth");
+      var screenMain = document.getElementById("screen-main");
+
+      // 1. Subscription Gate
+      if (!subUnlocked && !currentUser) {
+        screenGate.classList.remove("hidden");
+        screenAuth.classList.add("hidden");
+        screenMain.classList.add("hidden");
+        return;
+      }
+      screenGate.classList.add("hidden");
+
+      // 2. Auth Modal
+      if (!currentUser) {
+        screenAuth.classList.remove("hidden");
+        screenMain.classList.add("hidden");
+        return;
+      }
+      screenAuth.classList.add("hidden");
+      screenMain.classList.remove("hidden");
+
+      // 3. TopBar sync & Notification calculation
+      var totalUnread = messages.filter(function(m) {
+        return m && m.recipientId === currentUser.uid && !m.read;
+      }).length;
+
+      document.getElementById("topbar-unread-badge").innerHTML = getBadgeHTML(totalUnread);
+      document.getElementById("topbar-user-photo").src = currentUser.photoURL || ("https://api.dicebear.com/7.x/avataaars/svg?seed=" + currentUser.username);
+      document.getElementById("topbar-user-name").innerText = currentUser.username;
+
+      // 4. View Switching
+      var viewDash = document.getElementById("view-dashboard");
+      var viewDetail = document.getElementById("view-detail");
+      var viewChat = document.getElementById("view-chat");
+
+      viewDash.classList.add("hidden");
+      viewDetail.classList.add("hidden");
+      viewChat.classList.add("hidden");
+
+      if (currentView === "dashboard") {
+        viewDash.classList.remove("hidden");
+        renderDashboard();
+      } else if (currentView === "detail" && selectedProduct) {
+        viewDetail.classList.remove("hidden");
+        renderDetail();
+      } else if (currentView === "chat" && chatPeer) {
+        viewChat.classList.remove("hidden");
+        renderChat();
+      }
+    }
+
+    // Render Dashboard
+    function renderDashboard() {
+      var yourList = document.getElementById("your-products-list");
+      var otherGrid = document.getElementById("other-products-grid");
+      var otherEmpty = document.getElementById("other-products-empty");
+
+      var your = products.filter(function(p) { return p && p.userId === currentUser.uid; });
+      var other = products.filter(function(p) { return p && p.userId !== currentUser.uid; });
+
+      yourList.innerHTML = your.map(function(p) {
+        return (
+          '<div onclick="openProductDetail(\'' + p.id + '\')" class="card" style="width: 150px; height: 190px; flex-shrink: 0;">' +
+            '<img src="' + p.photoURL + '" alt="' + p.name + '" style="width: 100%; height: 110px; object-fit: cover; border-radius: 8px; background: #f3f4f6;" />' +
+            '<div style="padding-top: 8px; text-align: center;">' +
+              '<p class="truncate" style="font-size: 14px; font-weight: 600; color: #111827;">' + p.name + '</p>' +
+              '<p style="font-size: 12px; font-weight: bold; color: #2563eb; margin-top: 2px;">' + p.currency + ' ' + p.price + '</p>' +
+            </div>' +
+          '</div>'
+        );
+      }).join("");
+
+      if (other.length === 0) {
+        otherEmpty.classList.remove("hidden");
+        otherGrid.innerHTML = "";
+      } else {
+        otherEmpty.classList.add("hidden");
+        otherGrid.innerHTML = other.map(function(p) {
+          return (
+            '<div onclick="openProductDetail(\'' + p.id + '\')" class="card">' +
+              '<img src="' + p.photoURL + '" alt="' + p.name + '" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; background: #f3f4f6;" />' +
+              '<div style="padding-top: 8px;">' +
+                '<p class="truncate" style="font-size: 14px; font-weight: 600; color: #111827;">' + p.name + '</p>' +
+                '<p class="truncate" style="font-size: 12px; color: #6b7280;">' + p.username + '</p>' +
+                '<p style="font-size: 12px; font-weight: bold; color: #2563eb; margin-top: 4px;">' + p.currency + ' ' + p.price + '</p>' +
+              </div>' +
+            '</div>'
+          );
+        }).join("");
+      }
+    }
+
+    // Render Product Detail
+    function renderDetail() {
+      var isOwner = selectedProduct.userId === currentUser.uid;
+      document.getElementById("detail-prod-name-title").innerText = selectedProduct.name;
+      document.getElementById("detail-prod-name").innerText = selectedProduct.name;
+      document.getElementById("detail-prod-price").innerText = selectedProduct.currency + " " + selectedProduct.price;
+      document.getElementById("detail-prod-desc").innerText = selectedProduct.description || "No description provided.";
+      document.getElementById("detail-prod-photo").src = selectedProduct.photoURL;
+      document.getElementById("detail-seller-photo").src = selectedProduct.userPhoto;
+      document.getElementById("detail-seller-name").innerText = selectedProduct.username;
+
+      var btnBox = document.getElementById("detail-action-buttons");
+      if (isOwner) {
+        btnBox.innerHTML = '<button onclick="deleteProduct(\'' + selectedProduct.id + '\')" style="background: #dc2626; color: #ffffff; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer;">Delete</button>';
+      } else {
+        btnBox.innerHTML = '<button onclick="openChatFromProduct()" style="background: #2563eb; color: #ffffff; border: none; padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer;">Chat</button>';
+      }
+    }
+
+    // Render Direct Chat
+    function renderChat() {
+      var recipient = users.find(function(u) { return u && u.uid === chatPeer.uid; }) || chatPeer;
+      var isBlockedByMe = currentUser.blockedUsers && currentUser.blockedUsers.includes(recipient.uid);
+      var isBlockedByThem = recipient.blockedUsers && recipient.blockedUsers.includes(currentUser.uid);
+
+      document.getElementById("chat-recipient-photo").src = recipient.photoURL;
+      document.getElementById("chat-recipient-name").innerText = recipient.username;
+
+      var blockBtn = document.getElementById("chat-block-btn");
+      blockBtn.innerText = isBlockedByMe ? "Unblock" : "Block";
+      blockBtn.style.color = isBlockedByMe ? "#2563eb" : "#dc2626";
+
+      var blockedNotice = document.getElementById("chat-blocked-notice");
+      var unblockBar = document.getElementById("chat-unblock-bar");
+      var chatForm = document.getElementById("chat-form");
+
+      blockedNotice.classList.add("hidden");
+      unblockBar.classList.add("hidden");
+      chatForm.classList.add("hidden");
+
+      if (isBlockedByThem) {
+        blockedNotice.classList.remove("hidden");
+      } else if (isBlockedByMe) {
+        unblockBar.classList.remove("hidden");
+      } else {
+        chatForm.classList.remove("hidden");
+      }
+
+      var thread = messages.filter(function(m) {
+        return m && (
+          (m.senderId === currentUser.uid && m.recipientId === recipient.uid) ||
+          (m.senderId === recipient.uid && m.recipientId === currentUser.uid)
+        );
+      });
+
+      var stream = document.getElementById("messagesStream");
+      if (thread.length === 0) {
+        stream.innerHTML = '<p style="text-align: center; font-size: 12px; color: #9ca3af; margin-top: 40px;">Say hello to ' + recipient.username + '!</p>';
+      } else {
+        stream.innerHTML = thread.map(function(m) {
+          var isMe = m.senderId === currentUser.uid;
+          return (
+            '<div style="display: flex; justify-content: ' + (isMe ? "flex-end" : "flex-start") + ';">' +
+              '<div style="max-width: 80%; padding: 10px 14px; border-radius: 16px; font-size: 14px; ' + (isMe ? "background: #2563eb; color: #ffffff; border-bottom-right-radius: 2px;" : "background: #ffffff; border: 1px solid #e5e7eb; color: #111827; border-bottom-left-radius: 2px;") + '">' +
+                (m.mediaItems && m.mediaItems.length > 0 ?
+                  '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 6px;">' +
+                    m.mediaItems.map(function(item) {
+                      return item.isVideo ?
+                        '<video src="' + item.src + '" controls style="width: 100%; height: 110px; border-radius: 8px; object-fit: cover; background: #000; grid-column: span 2;"></video>' :
+                        '<img src="' + item.src + '" onclick="openPhotoModal(\'' + item.src + '\')" style="width: 100%; height: 110px; object-fit: cover; border-radius: 8px; border: 1px solid #e5e7eb; cursor: zoom-in;" title="Click photo to enlarge" />';
+                    }).join("") +
+                  '</div>' : "") +
+                (m.text ? '<p style="white-space: pre-wrap; word-break: break-word;">' + m.text + '</p>' : "") +
+              '</div>' +
+            '</div>'
+          );
+        }).join("");
+      }
+      stream.scrollTop = stream.scrollHeight;
+    }
+
+    // Photo Zoom Lightbox
+    window.openPhotoModal = function(url) {
+      if (!url) return;
+      document.getElementById("modal-photo-img").src = url;
+      document.getElementById("modal-photo").classList.remove("hidden");
+    };
+
+    window.closePhotoModal = function() {
+      document.getElementById("modal-photo").classList.add("hidden");
+      document.getElementById("modal-photo-img").src = "";
+    };
+
+    // Ultra Gate Navigation
+    window.handleGoToUltra = function() {
+      window.open(SUB_URL, "_blank");
+      setTimeout(function() {
+        subUnlocked = true;
+        setStored(K_SUB, true);
+        updateUI();
+      }, 700);
+    };
+
+    // Auth Switcher
+    window.setAuthMode = function(mode) {
+      authMode = mode;
+      document.getElementById("authError").innerText = "";
+      var tabIn = document.getElementById("tab-signin");
+      var tabReg = document.getElementById("tab-register");
+      var title = document.getElementById("auth-title");
+      var avatarSec = document.getElementById("auth-avatar-section");
+      var subBtn = document.getElementById("auth-submit-btn");
+
+      if (mode === "signin") {
+        tabIn.style.color = "#4ade80"; tabIn.style.borderBottom = "2px solid #4ade80";
+        tabReg.style.color = "#71717a"; tabReg.style.borderBottom = "none";
+        title.innerText = "ACCOUNT SIGN IN";
+        avatarSec.classList.add("hidden");
+        subBtn.innerText = "Sign In & Enter";
+      } else {
+        tabReg.style.color = "#4ade80"; tabReg.style.borderBottom = "2px solid #4ade80";
+        tabIn.style.color = "#71717a"; tabIn.style.borderBottom = "none";
+        title.innerText = "NEW REGISTRATION";
+        avatarSec.classList.remove("hidden");
+        subBtn.innerText = "Create Account";
+      }
+    };
+
+    var tempAvatar = "https://api.dicebear.com/7.x/avataaars/svg?seed=New";
+    window.previe
