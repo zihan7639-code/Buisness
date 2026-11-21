@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Business Marketplace</title>
+
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+    html, body {
+      background-color: #f8f9fa;
+      color: #111827;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      width: 100%;
+      overflow-x: hidden;
+    }
+    input, button, select, textarea { font-family: inherit; font-size: inherit; }
+    .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Badges */
+    .badge-dot {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      background: #ef4444;
+      border-radius: 50%;
+      border: 1.5px solid #ffffff;
+      box-shadow: 0 0 5px rgba(239,68,68,0.8);
+      animation: pulse-dot 1.4s infinite;
+      vertical-align: middle;
+    }
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: #ef4444;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1;
+      padding: 2px 6px;
+      border-radius: 9999px;
+      border: 1.5px solid #ffffff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      vertical-align: middle;
+      animation: pulse-dot 1.4s infinite;
+    }
+    .badge-pill-dot { width: 4px; height: 4px; background: #fff; border-radius: 50%; display: inline-block; }
+    @keyframes pulse-dot { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+
+    /* Layout */
+    header {
+      position: sticky; top: 0; z-index: 40;
+      background: #ffffff; border-bottom: 1px solid #e5e7eb;
+      padding: 10px 16px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .icon-btn {
+      background: transparent; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      width: 40px; height: 40px; border-radius: 50%; color: #374151; position: relative; padding: 0;
+    }
+    .icon-btn:hover { background: #f3f4f6; }
+
+    /* Drawers & Modals */
+    .overlay {
+      position: fixed; inset: 0; z-index: 50;
+      background: rgba(0, 0, 0, 0.5); display: flex;
+    }
+    .drawer-left {
+      width: 82%; max-width: 320px; height: 100%; background: #ffffff;
+      display: flex; flex-direction: column; padding: 16px; box-shadow: 2px 0 12px rgba(0,0,0,0.15);
+    }
+    .drawer-right {
+      width: 82%; max-width: 320px; height: 100%; background: #ffffff;
+      display: flex; flex-direction: column; padding: 20px; box-shadow: -2px 0 12px rgba(0,0,0,0.15);
+    }
+    .modal-box {
+      width: 100%; max-width: 380px; background: #ffffff; border-radius: 16px;
+      padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.25); display: flex; flex-direction: column; gap: 12px;
+    }
+    .card {
+      background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px;
+      padding: 10px; cursor: pointer; display: flex; flex-direction: column;
+      transition: transform 0.15s ease;
+    }
+    .card:hover { transform: translateY(-2px); }
+    .prod-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+    }
+    @media (min-width: 640px) { .prod-grid { grid-template-columns: repeat(4, 1fr); } }
+  </style>
+</head>
+<body>
+
+  <!-- 1. GATE (UNLOCKS SYNCHRONOUSLY IN 0 SECONDS - NEVER STUCK) -->
+  <div id="screen-gate" style="position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background: #000000; padding: 16px;">
+    <div style="width: 100%; max-width: 380px; background: #0a0a0a; border: 1px solid #22c55e; border-radius: 16px; padding: 32px 24px; text-align: center; color: #22c55e; box-shadow: 0 0 35px rgba(34,197,94,0.25);">
+      <span style="font-size: 38px; display: block; margin-bottom: 8px; color: #ef4444;">⚠</span>
+      <h1 style="font-size: 20px; font-weight: 900; color: #ef4444; letter-spacing: 2px;">SUB TO ULTRA</h1>
+      <p style="font-size: 12px; color: #fca5a5; margin-top: 6px;">Subscription Required for Access</p>
+      
+      <button onclick="handleGateUnlockAndOpen()" style="width: 100%; margin-top: 24px; padding: 14px; background: rgba(239,68,68,0.15); border: 1px solid #ef4444; color: #fca5a5; font-weight: bold; font-size: 13px; letter-spacing: 2px; border-radius: 8px; cursor: pointer;">
+        [ SIGN IN TO ULTRA ]
+      </button>
+    </div>
+  </div>
+
+  <!-- 2. AUTH MODAL (Sign In & Unique Registration) -->
+  <div id="screen-auth" style="position: fixed; inset: 0; z-index: 40; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.96); padding: 16px;">
+    <div style="width: 100%; max-width: 360px; background: #18181b; border: 1px solid rgba(34,197,94,0.3); border-radius: 16px; padding: 24px; text-align: center; box-shadow: 0 0 30px rgba(34,197,94,0.15);">
+      <div style="display: flex; border-bottom: 1px solid #27272a; padding-bottom: 8px; margin-bottom: 16px;">
+        <button id="tab-signin" onclick="setAuthMode('signin')" style="flex: 1; padding: 6px; font-size: 12px; font-weight: bold; text-transform: uppercase; border: none; background: transparent; cursor: pointer; color: #4ade80; border-bottom: 2px solid #4ade80;">Sign In</button>
+        <button id="tab-register" onclick="setAuthMode('register')" style="flex: 1; padding: 6px; font-size: 12px; font-weight: bold; text-transform: uppercase; border: none; background: transparent; cursor: pointer; color: #71717a;">Create Account</button>
+      </div>
+      <h2 id="auth-title" style="font-size: 16px; font-weight: bold; color: #4ade80; margin-bottom: 12px;">ACCOUNT SIGN IN</h2>
+      
+      <div id="auth-avatar-section" style="display: none; margin-bottom: 14px;">
+        <label style="position: relative; width: 74px; height: 74px; margin: 0 auto; border-radius: 50%; background: #27272a; border: 2px solid #22c55e; overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+          <img id="authAvatarPreview" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' fill='%234ade80' viewBox='0 0 24 24'><path d='M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z'/></svg>" style="width: 100%; height: 100%; object-fit: cover;" alt="Avatar" />
+          <input type="file" accept="image/*" onchange="previewAuthAvatar(event)" style="display: none;" />
+        </label>
+        <p style="font-size: 11px; color: #a1a1aa; margin-top: 6px;">Tap circle to add photo *</p>
+      </div>
+
+      <form onsubmit="handleAuthSubmit(event)" style="display: flex; flex-direction: column; gap: 12px; text-align: left;">
+        <input id="authUsername" type="text" placeholder="Username (Unique)" required style="width: 100%; background: #000; border: 1px solid #3f3f46; border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 14px; outline: none;" />
+        <input id="authPassword" type="password" placeholder="Password" required style="width: 100%; background: #000; border: 1px solid #3f3f46; border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 14px; outline: none;" />
+        <button id="auth-submit-btn" type="submit" style="width: 100%; background: #2563eb; color: #fff; font-weight: bold; padding: 11px; border-radius: 8px; border: none; font-size: 13px; text-transform: uppercase; cursor: pointer; margin-top: 4px;">
+          Sign In & Enter
+        </button>
+      </form>
+      <div id="authError" style="font-size: 12px; color: #f87171; min-height: 18px; margin-top: 10px; font-weight: bold;"></div>
+    </div>
+  </div>
+
+  <!-- 3. MAIN DASHBOARD & APP SCREEN -->
+  <div id="screen-main" style="display: none;">
+    <header>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <!-- 3-Lines Button with Dynamic Unread Badge -->
+        <button onclick="openFriendsDrawer()" class="icon-btn" title="Friends">
+          <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          <span id="topbar-unread-badge" style="position: absolute; top: -3px; right: -5px; pointer-events: none;"></span>
+        </button>
+
+        <!-- Account Profile Button -->
+        <button onclick="openProfileDrawer()" style="display: flex; align-items: center; gap: 8px; background: transparent; border: none; cursor: pointer; padding-right: 8px;">
+          <img id="topbar-user-photo" src="" alt="User" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid #d1d5db;" />
+          <span id="topbar-user-name" class="truncate" style="font-size: 14px; font-weight: bold; color: #111827; max-width: 120px;"></span>
+        </button>
+        <span style="font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px; color: #9ca3af; padding-left: 6px; border-left: 1px solid #e5e7eb;">business</span>
+      </div>
+      <button onclick="openSearchModal()" class="icon-btn" title="Search">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" stroke-width="2"/><path d="m21 21-4.3-4.3" stroke-width="2"/></svg>
+      </button>
+    </header>
+
+    <!-- DASHBOARD VIEW -->
+    <div id="view-dashboard" style="max-width: 980px; margin: 0 auto; padding: 24px 16px; min-height: calc(100vh - 60px);">
+      <section style="margin-bottom: 32px;">
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
+          <h2 style="font-size: 16px; font-weight: bold; color: #1f2937;">Your</h2>
+          <svg width="16" height="16" fill="none" stroke="#6b7280" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="m9 18 6-6-6-6"/></svg>
+        </div>
+        <div style="display: flex; gap: 14px; overflow-x: auto; padding-bottom: 8px;">
+          <button onclick="openCreateModal()" style="width: 150px; height: 190px; background: #fff; border: 2px dashed #2563eb; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #2563eb; cursor: pointer; flex-shrink: 0;">
+            <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" stroke-width="2"/><path stroke-linecap="round" stroke-width="2" d="M12 8v8M8 12h8"/></svg>
+            <span style="font-size: 12px; font-weight: bold;">Create</span>
+          </button>
+          <div id="your-products-list" style="display: flex; gap: 14px;"></div>
+        </div>
+      </section>
+
+      <section>
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
+          <h2 style="font-size: 16px; font-weight: bold; color: #1f2937;">Others</h2>
+          <svg width="16" height="16" fill="none" stroke="#6b7280" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <div id="other-products-empty" style="display: none; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 36px 16px; text-align: center; font-size: 14px; color: #9ca3af;">
+          No products from other sellers yet.
+        </div>
+        <div id="other-products-grid" class="prod-grid"></div>
+      </section>
+    </div>
+
+    <!-- PRODUCT DETAIL VIEW -->
+    <div id="view-detail" style="display: none; min-height: calc(100vh - 60px); padding: 24px 16px;">
+      <div style="max-width: 640px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 20px;">
+        <div style="display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px; margin-bottom: 16px;">
+          <button onclick="setView('dashboard')" class="icon-btn">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="m12 19-7-7 7-7M19 12H5"/></svg>
+          </button>
+          <h2 id="detail-prod-name-title" class="truncate" style="font-size: 18px; font-weight: bold; color: #111827;"></h2>
+        </div>
+        <!-- Tap Photo to Zoom -->
+        <img id="detail-prod-photo" src="" alt="Product" onclick="openPhotoModal(this.src)" style="width: 100%; max-height: 320px; object-fit: cover; border-radius: 12px; border: 1px solid #e5e7eb; cursor: zoom-in;" title="Click photo to enlarge" />
+        <div style="display: flex; justify-content: space-between; align-items: center; margin: 16px 0 8px 0;">
+          <h1 id="detail-prod-name" style="font-size: 22px; font-weight: bold; color: #111827;"></h1>
+          <span id="detail-prod-price" style="font-size: 20px; font-weight: bold; color: #2563eb;"></span>
+        </div>
+        <p id="detail-prod-desc" style="font-size: 14px; color: #4b5563; line-height: 1.5; white-space: pre-wrap; margin-bottom: 20px;"></p>
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <img id="detail-seller-photo" src="" alt="Seller" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid #d1d5db;" />
+            <div>
+              <p style="font-size: 11px; color: #6b7280;">Seller</p>
+              <p id="detail-seller-name" style="font-size: 14px; font-weight: bold; color: #111827;"></p>
+            </div>
+          </div>
+          <div id="detail-action-buttons"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DIRECT CHAT VIEW -->
+    <div id="view-chat" style="display: none; height: calc(100dvh - 61px); max-height: calc(100vh - 61px); overflow: hidden; flex-direction: column; background: #ffffff; max-width: 520px; margin: 0 auto; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid #e5e7eb; position: relative; flex-shrink: 0;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button onclick="setView('dashboard')" class="icon-btn" style="width: 34px; height: 34px;">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="m12 19-7-7 7-7M19 12H5"/></svg>
+          </button>
+          <img id="chat-recipient-photo" src="" alt="User" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid #e5e7eb;" />
+          <h3 id="chat-recipient-name" class="truncate" style="font-size: 14px; font-weight: bold; color: #111827; max-width: 180px;"></h3>
+        </div>
+        <div style="position: relative;">
+          <button onclick="toggleChatMenu()" class="icon-btn" style="width: 34px; height: 34px;">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg>
+          </button>
+          <div id="chat-menu-dropdown" style="display: none; position: absolute; right: 0; top: 38px; background: #ffffff; border: 1px solid #e5e7eb; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 10px; width: 130px; z-index: 50; overflow: hidden;">
+            <button id="chat-block-btn" onclick="toggleBlockUser()" style="width: 100%; text-align: left; padding: 10px 14px; font-size: 13px; font-weight: bold; border: none; background: transparent; cursor: pointer;">
+              Block
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="messagesStream" style="flex: 1; min-height: 0; padding: 12px; overflow-y: auto; background: #f9fafb; display: flex; flex-direction: column; gap: 8px;"></div>
+      <div id="stagedMediaTray" style="display: none; padding: 6px 10px; background: #f3f4f6; border-top: 1px solid #e5e7eb; gap: 8px; overflow-x: auto; flex-shrink: 0;"></div>
+
+      <div id="chat-blocked-notice" style="display: none; padding: 12px; background: #f3f4f6; text-align: center; font-size: 13px; font-weight: bold; color: #dc2626; border-top: 1px solid #e5e7eb; flex-shrink: 0;">
+        You're Blocked
+      </div>
+
+      <div id="chat-unblock-bar" style="display: none; padding: 10px 14px; background: #f3f4f6; align-items: center; justify-content: space-between; border-top: 1px solid #e5e7eb; flex-shrink: 0;">
+        <span style="font-size: 12px; color: #4b5563;">You have blocked this user.</span>
+        <button onclick="toggleBlockUser()" style="background: transparent; border: none; color: #2563eb; font-weight: bold; font-size: 13px; cursor: pointer;">Unblock</button>
+      </div>
+
+      <form id="chat-form" onsubmit="handleSendMessage(event)" style="padding: 8px 10px; border-top: 1px solid #e5e7eb; background: #ffffff; display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+        <label class="icon-btn" style="width: 34px; height: 34px;" title="Add photos or videos">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M12 5v14M5 12h14"/></svg>
+          <input type="file" multiple accept="image/*,video/*" onchange="handleChatFiles(event)" style="display: none;" />
+        </label>
+        <input id="chatTextInput" type="text" placeholder="Type a message..." style="flex: 1; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 9999px; padding: 8px 14px; font-size: 13px; outline: none; color: #111827;" />
+        <button type="submit" style="width: 36px; height: 36px; border-radius: 50%; background: #2563eb; color: #ffffff; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3.478 2.405a.75.75 0 0 0-.926.94l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.405Z"/></svg>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. FRIENDS DRAWER (Shows accounts with unread badge) -->
+  <div id="drawer-friends" class="overlay" style="display: none;" onclick="closeFriendsDrawer()">
+    <div class="drawer-left" onclick="event.stopPropagation()">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px; margin-bottom: 12px;">
+        <h2 style="font-size: 18px; font-weight: 900; color: #111827;">Friends</h2>
+        <button onclick="closeFriendsDrawer()" class="icon-btn">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="friends-list-container" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;"></div>
+    </div>
+  </div>
+
+  <!-- 5. ACCOUNT PROFILE DRAWER -->
+  <div id="drawer-profile" class="overlay" style="display: none; justify-content: flex-end;" onclick="closeProfileDrawer()">
+    <div class="drawer-right" onclick="event.stopPropagation()">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px; margin-bottom: 20px;">
+        <span style="font-size: 15px; font-weight: bold; color: #1f2937;">Account Profile</span>
+        <button onclick="closeProfileDrawer()" class="icon-btn" title="Go Back">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px;">
+        <div id="profile-view-box">
+          <img id="profile-drawer-photo" src="" alt="Profile" style="width: 88px; height: 88px; border-radius: 50%; object-fit: cover; border: 3px solid #2563eb; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" />
+          <h3 id="profile-drawer-name" style="font-size: 18px; font-weight: bold; color: #111827; margin-top: 10px;"></h3>
+        </div>
+        <div id="profile-edit-box" style="display: none; width: 100%;">
+          <label style="position: relative; width: 88px; height: 88px; margin: 0 auto; border-radius: 50%; border: 2px dashed #2563eb; overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+            <img id="editProfilePicPreview" src="" style="width: 100%; height: 100%; object-fit: cover;" alt="Preview" />
+            <input type="file" accept="image/*" onchange="previewEditPhoto(event)" style="display: none;" />
+          </label>
+          <input id="editUsernameInput" type="text" value="" style="border: 1px solid #d1d5db; border-radius: 8px; padding: 8px; font-size: 14px; text-align: center; font-weight: bold; width: 100%; margin-top: 10px; outline: none;" />
+        </div>
+        <div style="width: 100%; display: flex; flex-direction: column; gap: 10px; margin-top: 14px;">
+          <button id="btn-edit-profile" onclick="startEditingProfile()" style="width: 100%; padding: 10px; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; font-weight: 600; border-radius: 10px; cursor: pointer;">Edit Profile</button>
+          <button id="btn-save-profile" onclick="saveProfileChanges()" style="display: none; width: 100%; padding: 11px; background: #2563eb; color: #fff; font-weight: bold; border-radius: 10px; border: none; cursor: pointer;">Save Changes</button>
+          <button onclick="resetProfileForm()" style="width: 100%; padding: 10px; background: #f9fafb; color: #374151; border: 1px solid #e5e7eb; font-weight: 600; border-radius: 10px; cursor: pointer;">Reset</button>
+          <button onclick="handleLogOut()" style="width: 100%; padding: 10px; background: #f3f4f6; color: #1f2937; border: 1px solid #d1d5db; font-weight: 600; border-radius: 10px; cursor: pointer;">Log Out</button>
+          <button onclick="handleDeleteAccount()" style="width: 100%; padding: 10px; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-weight: 600; border-radius: 10px; cursor: pointer;">Delete Account</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. CREATE PRODUCT MODAL -->
+  <div id="modal-create" class="overlay" style="display: none; align-items: center; justify-content: center; padding: 16px;">
+    <form onsubmit="handleCreateProductSubmit(event)" class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px;">
+        <h2 style="font-size: 16px; font-weight: bold; color: #111827;">Create Product</h2>
+        <button type="button" onclick="closeCreateModal()" class="icon-btn">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <input id="newProdName" type="text" placeholder="Product Name (2-8 chars)" maxlength="8" required style="width: 100%; border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; font-size: 14px; outline: none;" />
+      <div style="display: flex; gap: 8px;">
+        <select id="newProdCurrency" style="border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; font-size: 14px; background: #fff;">
+          <option>$ USD</option>
+          <option>৳ TK</option>
+          <option>€ EUR</option>
+        </select>
+        <input id="newProdPrice" type="number" min="0" max="10000000000000" step="any" oninput="if(this.value.length > 14) this.value = this.value.slice(0, 14); if(Number(this.value) > 10000000000000) this.value = 10000000000000;" placeholder="Price (Max 10T)" required style="flex: 1; min-width: 0; border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; font-size: 14px; outline: none;" />
+      </div>
+      <textarea id="newProdDesc" placeholder="Description..." style="width: 100%; border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; font-size: 14px; height: 80px; outline: none;"></textarea>
+      <label style="border: 2px dashed #d1d5db; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; text-align: center;">
+        <img id="newProdPhotoPreview" style="height: 120px; object-fit: cover; border-radius: 8px; display: none;" alt="Preview" />
+        <span id="newProdPhotoText" style="font-size: 12px; color: #6b7280;">Click to upload product photo *</span>
+        <input id="newProdFileInput" type="file" accept="image/*" onchange="previewProductPhoto(event)" style="display: none;" required />
+      </label>
+      <button type="submit" style="width: 100%; background: #2563eb; color: #fff; font-weight: bold; padding: 11px; border-radius: 8px; border: none; font-size: 14px; cursor: pointer;">Publish Product</button>
+    </form>
+  </div>
+
+  <!-- 7. SEARCH MODAL -->
+  <div id="modal-search" class="overlay" style="display: none; align-items: center; justify-content: center; padding: 16px;">
+    <div class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-weight: bold; font-size: 15px;">Search Products</h3>
+        <button onclick="closeSearchModal()" class="icon-btn">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <input id="searchInput" type="text" oninput="handleSearch(event)" placeholder="Search products..." style="width: 100%; border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; font-size: 14px; outline: none;" />
+      <div id="searchResults" style="max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;"></div>
+    </div>
+  </div>
+
+  <!-- 8. PHOTO ZOOM MODAL (CROSS ON RIGHT TO GO BACK) -->
+  <div id="modal-photo" style="display: none; position: fixed; inset: 0; z-index: 60; align-items: center; justify-content: center; background: rgba(0,0,0,0.96); padding: 16px;" onclick="closePhotoModal()">
+    <button onclick="closePhotoModal()" style="position: absolute; top: 20px; right: 20px; width: 44px; height: 44px; background: rgba(255,255,255,0.25); color: #ffffff; border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 70;" title="Close photo">
+      <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+    <img id="modal-photo-img" src="" style="max-width: 92vw; max-height: 86vh; object-fit: contain; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);" onclick="event.stopPropagation()" alt="Enlarged" />
+  </div>
+
+  <!-- SCRIPT ENGINE -->
+  <script>
+    var K_SUB = "biz_app_gate_unlocked_live";
+    var K_USER = "biz_app_current_user_live";
+    var K_USERS = "biz_app_registered_users_live";
+    var K_PRODUCTS = "biz_app_products_live";
+    var K_MESSAGES = "biz_app_messages_live";
+
+    var DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' fill='%232563eb' viewBox='0 0 24 24'><path d='M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z'/></svg>";
+    var REGISTER_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' fill='%234ade80' viewBox='0 0 24 24'><path d='M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z'/></svg>";
+
+    var MemoryStore = {};
+    function getStored(key, fallback) {
+      try {
+        if (typeof window !== "undefined" && window.localStorage) {
+          var item = localStorage.getItem(key);
+          if (item !== null && item !== undefined) {
+            var parsed = JSON.parse(item);
+            return parsed !== null && parsed !== undefined ? parsed : fallback;
+          }
+        }
+      } catch (e) {}
+      return MemoryStore[key] !== undefined ? MemoryStore[key] : fallback;
+    }
+
+    function setStored(key, val) {
+      try {
+        if (typeof window !== "undefined" && window.localStorage) {
+          localStorage.setItem(key, JSON.stringify(val));
+        }
+      } catch (e) {}
+      MemoryStore[key] = val;
+    }
+
+    var rawUsers = getStored(K_USERS, []);
+    var users = Array.isArray(rawUsers) ? rawUsers.filter(function(u) { return u && u.uid && u.username && u.uid !== 'u_alex' && u.uid !== 'u_maya'; }) : [];
+
+    var rawUser = getStored(K_USER, null);
+    var currentUser = (rawUser && rawUser.uid && rawUser.username && rawUser.uid !== 'u_alex' && rawUser.uid !== 'u_maya') ? rawUser : null;
+
+    if (currentUser) {
+      var sync = users.find(function(u) { return u && u.uid === currentUser.uid; });
+      if (sync) currentUser = sync;
+    }
+
+    var subUnlocked = getStored(K_SUB, false);
+    if (currentUser) {
+      subUnlocked = true;
+      setStored(K_SUB, true);
+    }
+
+    var rawProducts = getStored(K_PRODUCTS, []);
+    var products = Array.isArray(rawProducts) ? rawProducts.filter(function(p) { return p && p.id; }) : [];
+
+    var rawMessages = getStored(K_MESSAGES, []);
+    var messages = Array.isArray(rawMessages) ? rawMessages.filter(function(m) { return m && m.id; }) : [];
+
+    var currentView = "dashboard";
+    var selectedProduct = null;
+    var chatPeer = null;
+    var authMode = "signin";
+    var chatMenuOpen = false;
+    var stagedMedia = [];
+    var isEditingProfile = false;
+    var pendingAuthAvatar = "";
+    var pendingEditAvatar = "";
+    var pendingProdPhoto = "";
+    var activeFriendMenuUid = null;
+    var friendMenuTimer = null;
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function compressDataUrl(dataUrl, maxDim, quality, cb) {
+      var img = new Image();
+      img.onload = function() {
+        var w = img.width;
+        var h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) {
+            h = Math.round((h * maxDim) / w);
+            w = maxDim;
+          } else {
+            w = Math.round((w * maxDim) / h);
+            h = maxDim;
+          }
+        }
+        var c = document.createElement("canvas");
+        c.width = w;
+        c.height = h;
+        var ctx = c.getContext("2d");
+        ctx.drawImage(img, 0, 0, w, h);
+        try {
+          cb(c.toDataURL("image/jpeg", quality));
+        } catch (err) {
+          cb(dataUrl);
+        }
+      };
+      img.onerror = function() { cb(dataUrl); };
+      img.src = dataUrl;
+    }
+
+    function getBadgeHTML(count) {
+      if (!count || count <= 0) return "";
+      if (count === 1) {
+        return '<span class="badge-dot" title="1 new message"></span>';
+      }
+      var num = count > 99 ? "99+" : String(count);
+      return (
+        '<span class="badge-pill">' +
+          '<span class="badge-pill-dot"></span>' +
+          '<span>' + num + '</span>' +
+        '</span>'
+      );
+    }
+
+    function updateUI() {
+      var screenGate = document.getElementById("screen-gate");
+      var screenAuth = document.getElementById("screen-auth");
+      var screenMain = document.getElementById("screen-main");
+
+      if (!subUnlocked && !currentUser) {
+        screenGate.style.display = "flex";
+        screenAuth.style.display = "none";
+        screenMain.style.display = "none";
+        return;
+      }
+      screenGate.style.display = "none";
+
+      if (!currentUser) {
+        screenAuth.style.display = "flex";
+        screenMain.style.display = "none";
+        return;
+      }
+      screenAuth.style.display = "none";
+      screenMain.style.display = "block";
+
+      var totalUnread = messages.filter(function(m) {
+        return m && m.recipientId === currentUser.uid && !m.read;
+      }).length;
+
+      document.getElementById("topbar-unread-badge").innerHTML = getBadgeHTML(totalUnread);
+      document.getElementById("topbar-user-photo").src = currentUser.photoURL || DEFAULT_AVATAR;
+      document.getElementById("topbar-user-name").innerText = currentUser.username;
+
+      var viewDash = document.getElementById("view-dashboard");
+      var viewDetail = document.getElementById("view-detail");
+      var viewChat = document.getElementById("view-chat");
+
+      viewDash.style.display = "none";
+      viewDetail.style.display = "none";
+      viewChat.style.display = "none";
+
+      if (currentView === "dashboard") {
+        viewDash.style.display = "block";
+        renderDashboard();
+      } else if (currentView === "detail" && selectedProduct) {
+        viewDetail.style.display = "block";
+        renderDetail();
+      } else if (currentView === "chat" && chatPeer) {
+        viewChat.style.display = "flex";
+        renderChat();
+      }
+    }
+
+    window.setView = function(view) {
+      currentView = view;
+      chatMenuOpen = false;
+      var dropdown = document.getElementById("chat-menu-dropdown");
+      if (dropdown) dropdown.style.display = "none";
+      updateUI();
+    };
+
+    // GATE HANDLERS
+    window.handleGateUnlockAndOpen = function() {
+      subUnlocked = true;
+      setStored(K_SUB, true);
+      updateUI();
+      try {
+        window.open("https://www.youtube.com/@Ultra-Gaming-2.O-Official", "_blank");
+      } catch (e) {}
+    };
+
+    // AUTH HANDLERS
+    window.setAuthMode = function(mode) {
+      authMode = mode;
+      var tabSignIn = document.getElementById("tab-signin");
+      var tabRegister = document.getElementById("tab-register");
+      var title = document.getElementById("auth-title");
+      var avatarSec = document.getElementById("auth-avatar-section");
+      var submitBtn = document.getElementById("auth-submit-btn");
+      var errBox = document.getElementById("authError");
+
+      errBox.innerText = "";
+      if (mode === "signin") {
+        tabSignIn.style.color = "#4ade80";
+        tabSignIn.style.borderBottom = "2px solid #4ade80";
+        tabRegister.style.color = "#71717a";
+        tabRegister.style.borderBottom = "none";
+        title.innerText = "ACCOUNT SIGN IN";
+        avatarSec.style.display = "none";
+        submitBtn.innerText = "Sign In & Enter";
+      } else {
+        tabRegister.style.color = "#4ade80";
+        tabRegister.style.borderBottom = "2px solid #4ade80";
+        tabSignIn.style.color = "#71717a";
+        tabSignIn.style.borderBottom = "none";
+        title.innerText = "CREATE ACCOUNT";
+        avatarSec.style.display = "block";
+        submitBtn.innerText = "Create & Enter";
+      }
+    };
+
+    window.previewAuthAvatar = function(event) {
+      var file = event.target.files && event.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        compressDataUrl(e.target.result, 240, 0.75, function(compressed) {
+          pendingAuthAvatar = compressed;
+          document.getElementById("authAvatarPreview").src = compressed;
+        });
+      };
+      reader.readAsDataURL(file);
+    };
+
+    window.handleAuthSubmit = function(event) {
+      event.preventDefault();
+      var usernameInput = document.getElementById("authUsername").value.trim();
+      var passwordInput = document.getElementById("authPassword").value;
+      var errBox = document.getElementById("authError");
+      errBox.innerText = "";
+
+      if (usernameInput.length < 2 || usernameInput.length > 16) {
+        errBox.innerText = "Username must be 2 to 16 characters.";
+        return;
+      }
+      if (passwordInput.length < 2 || passwordInput.length > 16) {
+        errBox.innerText = "Password must be 2 to 16 characters.";
+        return;
+      }
+
+      if (authMode === "register") {
+        if (!pendingAuthAvatar) {
+          errBox.innerText = "Please add a profile photo.";
+          return;
+        }
+        var exists = users.some(function(u) {
+          return u && u.username.toLowerCase() === usernameInput.toLowerCase();
+        });
+        if (exists) {
+          errBox.innerText = "Username already taken. Try Sign In.";
+          return;
+        }
+        var newUser = {
+          uid: "u_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
+          username: usernameInput,
+          password: passwordInput,
+          photoURL: pendingAuthAvatar,
+          blockedUsers: []
+        };
+        users.push(newUser);
+        setStored(K_USERS, users);
+        currentUser = newUser;
+        setStored(K_USER, currentUser);
+        pendingAuthAvatar = "";
+        document.getElementById("authUsername").value = "";
+        document.getElementById("authPassword").value = "";
+        document.getElementById("authAvatarPreview").src = REGISTER_AVATAR;
+        currentView = "dashboard";
+        updateUI();
+      } else {
+        var matched = users.find(function(u) {
+          return u && u.username.toLowerCase() === usernameInput.toLowerCase() && u.password === passwordInput;
+        });
+        if (!matched) {
+          errBox.innerText = "Invalid username or password.";
+          return;
+        }
+        currentUser = matched;
+        setStored(K_USER, currentUser);
+        document.getElementById("authUsername").value = "";
+        document.getElementById("authPassword").value = "";
+        currentView = "dashboard";
+        updateUI();
+      }
+    };
+
+    // DASHBOARD RENDER
+    function renderDashboard() {
+      var yourList = document.getElementById("your-products-list");
+      var otherGrid = document.getElementById("other-products-grid");
+      var otherEmpty = document.getElementById("other-products-empty");
+
+      var your = products.filter(function(p) { return p && p.userId === currentUser.uid; });
+      var other = products.filter(function(p) { return p && p.userId !== currentUser.uid; });
+
+      yourList.innerHTML = your.map(function(p) {
+        return (
+          '<div onclick="openProductDetail(\'' + p.id + '\')" class="card" style="width: 150px; height: 190px; flex-shrink: 0;">' +
+            '<img src="' + p.photoURL + '" alt="' + escapeHtml(p.name) + '" style="width: 100%; height: 110px; object-fit: cover; border-radius: 8px; background: #f3f4f6;" />' +
+            '<div style="padding-top: 8px; text-align: center; width: 100%; overflow: hidden;">' +
+              '<p class="truncate" style="font-size: 14px; font-weight: 600; color: #111827;">' + escapeHtml(p.name) + '</p>' +
+              '<p class="truncate" style="font-size: 12px; font-weight: bold; color: #2563eb; margin-top: 2px;">' + escapeHtml(p.currency) + ' ' + escapeHtml(p.price) + '</p>' +
+            '</div>' +
+          '</div>'
+        );
+      }).join("");
+
+      if (other.length === 0) {
+        otherEmpty.style.display = "block";
+        otherGrid.innerHTML = "";
+      } else {
+        otherEmpty.style.display = "none";
+        otherGrid.innerHTML = other.map(function(p) {
+          return (
+            '<div onclick="openProductDetail(\'' + p.id + '\')" class="card" style="min-width: 0;">' +
+              '<img src="' + p.photoURL + '" alt="' + escapeHtml(p.name) + '" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; background: #f3f4f6;" />' +
+              '<div style="padding-top: 8px; width: 100%; overflow: hidden;">' +
+                '<p class="truncate" style="font-size: 14px; font-weight: 600; color: #111827;">' + escapeHtml(p.name) + '</p>' +
+                '<p class="truncate" style="font-size: 12px; color: #6b7280;">' + escapeHtml(p.username) + '</p>' +
+                '<p class="truncate" style="font-size: 12px; font-weight: bold; color: #2563eb; margin-top: 4px;">' + escapeHtml(p.currency) + ' ' + escapeHtml(p.price) + '</p>' +
+              '</div>' +
+            '</div>'
+          );
+        }).join("");
+      }
+    }
+
+    // PRODUCT DETAIL & ACTIONS
+    window.openProductDetail = function(prodId) {
+      var found = products.find(function(p) { return p && p.id === prodId; });
+      if (!found) return;
+      selectedProduct = found;
+      setView("detail");
+    };
+
+    function renderDetail() {
+      var isOwner = selectedProduct.userId === currentUser.uid;
+      document.getElementById("detail-prod-name-title").innerText = selectedProduct.name;
+      document.getElementById("detail-prod-name").innerText = selectedProduct.name;
+      document.getElementById("detail-prod-price").innerText = selectedProduct.currency + " " + selectedProduct.price;
+      document.getElementById("detail-prod-desc").innerText = selectedProduct.description || "No description provided.";
+      document.getElementById("detail-prod-photo").src = selectedProduct.photoURL;
+      document.getElementById("detail-seller-photo").src = selectedProduct.userPhoto || DEFAULT_AVATAR;
+      document.getElementById("detail-seller-name").innerText = selectedProduct.username;
+
+      var btnBox = document.getElementById("detail-action-buttons");
+      if (isOwner) {
+        btnBox.innerHTML = '<button onclick="deleteProduct(\'' + selectedProduct.id + '\')" style="background: #dc2626; color: #ffffff; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer;">Delete</button>';
+      } else {
+        btnBox.innerHTML = '<button onclick="openChatFromProduct()" style="background: #2563eb; color: #ffffff; border: none; padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer;">Chat</button>';
+      }
+    }
+
+    window.deleteProduct = function(prodId) {
+      products = products.filter(function(p) { return p && p.id !== prodId; });
+      setStored(K_PRODUCTS, products);
+      selectedProduct = null;
+      setView("dashboard");
+    };
+
+    window.openChatFromProduct = function() {
+      if (!selectedProduct || selectedProduct.userId === currentUser.uid) return;
+      var seller = users.find(function(u) { return u && u.uid === selectedProduct.userId; }) || {
+        uid: selectedProduct.userId,
+        username: selectedProduct.username,
+        photoURL: selectedProduct.userPhoto || DEFAULT_AVATAR,
+        blockedUsers: []
+      };
+      openChatWithUser(seller);
+    };
+
+    function openChatWithUser(userObj) {
+      var deletedList = Array.isArray(currentUser.deletedChats) ? currentUser.deletedChats : [];
+      if (deletedList.indexOf(userObj.uid) !== -1) {
+        return;
+      }
+      chatPeer = userObj;
+      stagedMedia = [];
+      renderStagedMediaTray();
+      markThreadAsRead(userObj.uid);
+      setView("chat");
+    }
+
+    function markThreadAsRead(peerUid) {
+      var changed = false;
+      messages.forEach(function(m) {
+        if (m && m.senderId === peerUid && m.recipientId === currentUser.uid && !m.read) {
+          m.read = true;
+          changed = true;
+        }
+      });
+      if (changed) setStored(K_MESSAGES, messages);
+    }
+
+    // DIRECT CHAT RENDER & MESSAGING
+    function renderChat() {
+      var recipient = users.find(function(u) { return u && u.uid === chatPeer.uid; }) || chatPeer;
+      var isBlockedByMe = Array.isArray(currentUser.blockedUsers) && currentUser.blockedUsers.includes(recipient.uid);
+      var isBlockedByThem = Array.isArray(recipient.blockedUsers) && recipient.blockedUsers.includes(currentUser.uid);
+      var isDeletedByMe = Array.isArray(currentUser.deletedChats) && currentUser.deletedChats.indexOf(recipient.uid) !== -1;
+
+      document.getElementById("chat-recipient-photo").src = recipient.photoURL || DEFAULT_AVATAR;
+      document.getElementById("chat-recipient-name").innerText = recipient.username;
+
+      var blockBtn = document.getElementById("chat-block-btn");
+      blockBtn.innerText = isBlockedByMe ? "Unblock" : "Block";
+      blockBtn.style.color = isBlockedByMe ? "#2563eb" : "#dc2626";
+
+      var blockedNotice = document.getElementById("chat-blocked-notice");
+      var unblockBar = document.getElementById("chat-unblock-bar");
+      var chatForm = document.getElementById("chat-form");
+
+      blockedNotice.style.display = "none";
+      unblockBar.style.display = "none";
+      chatForm.style.display = "none";
+
+      if (isDeletedByMe) {
+        blockedNotice.innerText = "Chat deleted. No new messages allowed.";
+        blockedNotice.style.display = "block";
+      } else if (isBlockedByThem) {
+        blockedNotice.innerText = "You're Blocked";
+        blockedNotice.style.display = "block";
+      } else if (isBlockedByMe) {
+        unblockBar.style.display = "flex";
+      } else {
+        chatForm.style.display = "flex";
+      }
+
+      var thread = messages.filter(function(m) {
+        return m && (
+          (m.senderId === currentUser.uid && m.recipientId === recipient.uid) ||
+          (m.senderId === recipient.uid && m.recipientId === currentUser.uid)
+        );
+      });
+
+      var stream = document.getElementById("messagesStream");
+      if (thread.length === 0) {
+        stream.innerHTML = '<p style="text-align: center; font-size: 12px; color: #9ca3af; margin-top: 40px;">Say hello to ' + escapeHtml(recipient.username) + '!</p>';
+      } else {
+        stream.innerHTML = thread.map(function(m) {
+          var isMe = m.senderId === currentUser.uid;
+          var mediaBlock = "";
+          if (Array.isArray(m.mediaItems) && m.mediaItems.length > 0) {
+            var cols = m.mediaItems.length > 1 ? "repeat(2, 1fr)" : "1fr";
+            var itemsHtml = m.mediaItems.map(function(item) {
+              if (item.type === "video") {
+                return '<video src="' + item.url + '" controls style="width: 100%; max-height: 180px; border-radius: 8px; background: #000;"></video>';
+              }
+              return '<img src="' + item.url + '" onclick="openPhotoModal(this.src)" style="width: 100%; max-height: 180px; object-fit: cover; border-radius: 8px; cursor: zoom-in;" alt="Attachment" />';
+            }).join("");
+            mediaBlock = '<div style="display: grid; grid-template-columns: ' + cols + '; gap: 6px; margin-bottom: ' + (m.text ? "6px" : "0") + ';">' + itemsHtml + '</div>';
+          }
+          var textBlock = m.text ? '<p style="white-space: pre-wrap; word-break: break-word;">' + escapeHtml(m.text) + '</p>' : '';
+
+          return (
+            '<div style="display: flex; justify-content: ' + (isMe ? "flex-end" : "flex-start") + ';">' +
+              '<div style="max-width: 80%; padding: 10px 14px; border-radius: 16px; font-size: 14px; ' + (isMe ? "background: #2563eb; color: #ffffff; border-bottom-right-radius: 2px;" : "background: #ffffff; border: 1px solid #e5e7eb; color: #111827; border-bottom-left-radius: 2px;") + '">' +
+                mediaBlock +
+                textBlock +
+              '</div>' +
+            '</div>'
+          );
+        }).join("");
+      }
+      stream.scrollTop = stream.scrollHeight;
+    }
+
+    window.toggleChatMenu = function() {
+      chatMenuOpen = !chatMenuOpen;
+      document.getElementById("chat-menu-dropdown").style.display = chatMenuOpen ? "block" : "none";
+    };
+
+    window.toggleBlockUser = function() {
+      if (!chatPeer || !currentUser) return;
+      if (!Array.isArray(currentUser.blockedUsers)) currentUser.blockedUsers = [];
+      var idx = currentUser.blockedUsers.indexOf(chatPeer.uid);
+      if (idx === -1) {
+        currentUser.blockedUsers.push(chatPeer.uid);
+      } else {
+        currentUser.blockedUsers.splice(idx, 1);
+      }
+      users = users.map(function(u) { return u.uid === currentUser.uid ? currentUser : u; });
+      setStored(K_USERS, users);
+      setStored(K_USER, currentUser);
+      chatMenuOpen = false;
+      document.getElementById("chat-menu-dropdown").style.display = "none";
+      renderChat();
+    };
+
+    window.handleChatFiles = function(event) {
+      var files = Array.prototype.slice.call(event.target.files || []);
+      if (!files.length) return;
+      files.forEach(function(file) {
+        var isVideo = file.type && file.type.indexOf("video/") === 0;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          if (isVideo) {
+            stagedMedia.push({ type: "video", url: e.target.result });
+            renderStagedMediaTray();
+          } else {
+            compressDataUrl(e.target.result, 480, 0.72, function(compressed) {
+              stagedMedia.push({ type: "image", url: compressed });
+              renderStagedMediaTray();
+            });
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+      event.target.value = "";
+    };
+
+    function renderStagedMediaTray() {
+      var tray = document.getElementById("stagedMediaTray");
+      if (!stagedMedia.length) {
+        tray.style.display = "none";
+        tray.innerHTML = "";
+        return;
+      }
+      tray.style.display = "flex";
+      tray.innerHTML = stagedMedia.map(function(item, idx) {
+        var preview = item.type === "video"
+          ? '<video src="' + item.url + '" style="width: 54px; height: 54px; object-fit: cover; border-radius: 8px; background: #000;"></video>'
+          : '<img src="' + item.url + '" style="width: 54px; height: 54px; object-fit: cover; border-radius: 8px;" alt="Staged" />';
+        return (
+          '<div style="position: relative; flex-shrink: 0;">' +
+            preview +
+            '<button type="button" onclick="removeStagedMedia(' + idx + ')" style="position: absolute; top: -5px; right: -5px; width: 18px; height: 18px; border-radius: 50%; background: #ef4444; color: #fff; border: none; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;">×</button>' +
+          '</div>'
+        );
+      }).join("");
+    }
+
+    window.removeStagedMedia = function(index) {
+      stagedMedia.splice(index, 1);
+      renderStagedMediaTray();
+    };
+
+    window.handleSendMessage = function(event) {
+      event.preventDefault();
+      if (!chatPeer || !currentUser) return;
+      var deletedList = Array.isArray(currentUser.deletedChats) ? currentUser.deletedChats : [];
+      if (deletedList.indexOf(chatPeer.uid) !== -1) return;
+
+      var input = document.getElementById("chatTextInput");
+      var text = input.value.trim();
+      if (!text && stagedMedia.length === 0) return;
+
+      var msgObj = {
+        id: "m_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
+        senderId: currentUser.uid,
+        recipientId: chatPeer.uid,
+        text: text,
+        mediaItems: stagedMedia.slice(),
+        read: false,
+        timestamp: new Date().toISOString()
+      };
+      messages.push(msgObj);
+      setStored(K_MESSAGES, messages);
+
+      input.value = "";
+      stagedMedia = [];
+      renderStagedMediaTray();
+      renderChat();
+    };
+
+    // FRIENDS DRAWER
+    window.openFriendsDrawer = function() {
+      var container = document.getElementById("friends-list-container");
+      var deletedList = Array.isArray(currentUser.deletedChats) ? currentUser.deletedChats : [];
+      var pinnedList = Array.isArray(currentUser.pinnedUsers) ? currentUser.pinnedUsers : [];
+
+      var otherUsers = users.filter(function(u) {
+        return u && u.uid !== currentUser.uid && deletedList.indexOf(u.uid) === -1;
+      });
+
+      // Include any seller from products or message history not already in users (excluding deleted)
+      var seenUids = {};
+      var allPeers = [];
+      otherUsers.forEach(function(u) {
+        seenUids[u.uid] = true;
+        allPeers.push(u);
+      });
+      messages.forEach(function(m) {
+        if (!m) return;
+        var peerId = m.senderId === currentUser.uid ? m.recipientId : (m.recipientId === currentUser.uid ? m.senderId : null);
+        if (peerId && !seenUids[peerId] && deletedList.indexOf(peerId) === -1) {
+          seenUids[peerId] = true;
+          var prodMatch = products.find(function(p) { return p && p.userId === peerId; });
+          allPeers.push({
+            uid: peerId,
+            username: prodMatch ? prodMatch.username : "User",
+            photoURL: prodMatch ? prodMatch.userPhoto : DEFAULT_AVATAR,
+            blockedUsers: []
+          });
+        }
+      });
+
+      // Sort pinned accounts to the top
+      allPeers.sort(function(a, b) {
+        var aPin = pinnedList.indexOf(a.uid) !== -1 ? 1 : 0;
+        var bPin = pinnedList.indexOf(b.uid) !== -1 ? 1 : 0;
+        return bPin - aPin;
+      });
+
+      if (allPeers.length === 0) {
+        container.innerHTML = '<p style="font-size: 13px; color: #9ca3af; text-align: center; padding: 24px 8px;">No other accounts or chats yet.</p>';
+      } else {
+        container.innerHTML = allPeers.map(function(peer) {
+          var unread = messages.filter(function(m) {
+            return m && m.senderId === peer.uid && m.recipientId === currentUser.uid && !m.read;
+          }).length;
+          var isPinned = pinnedList.indexOf(peer.uid) !== -1;
+          var isMenuOpen = activeFriendMenuUid === peer.uid;
+
+          var pinIconLeft = isPinned
+            ? '<span title="Pinned account" style="display: inline-flex; align-items: center; color: #2563eb; margin-right: 2px;">' +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg>' +
+              '</span>'
+            : '';
+
+          var popupHtml = isMenuOpen
+            ? '<div onclick="event.stopPropagation()" style="position: absolute; right: 0; top: 34px; background: #ffffff; border: 1px solid #e5e7eb; box-shadow: 0 6px 16px rgba(0,0,0,0.16); border-radius: 10px; z-index: 60; display: flex; flex-direction: column; min-width: 105px; overflow: hidden;">' +
+                '<button type="button" onclick="togglePinFriend(\'' + peer.uid + '\', event)" style="padding: 8px 12px; font-size: 12px; font-weight: bold; color: #2563eb; background: #ffffff; border: none; border-bottom: 1px solid #f3f4f6; text-align: left; cursor: pointer;">' +
+                  (isPinned ? 'Unpin' : 'Pin') +
+                '</button>' +
+                '<button type="button" onclick="deleteFriendChat(\'' + peer.uid + '\', event)" style="padding: 8px 12px; font-size: 12px; font-weight: bold; color: #dc2626; background: #ffffff; border: none; text-align: left; cursor: pointer;">' +
+                  'Delete' +
+                '</button>' +
+              '</div>'
+            : '';
+
+          return (
+            '<div onclick="selectFriendFromDrawer(\'' + peer.uid + '\')" style="position: relative; display: flex; align-items: center; justify-content: space-between; padding: 10px; border-radius: 12px; cursor: pointer; border: 1px solid ' + (isPinned ? '#bfdbfe' : '#f3f4f6') + '; background: ' + (isPinned ? '#eff6ff' : '#ffffff') + ';">' +
+              '<div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">' +
+                '<img src="' + (peer.photoURL || DEFAULT_AVATAR) + '" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid #e5e7eb; flex-shrink: 0;" alt="Friend" />' +
+                '<span class="truncate" style="font-size: 14px; font-weight: bold; color: #111827;">' + escapeHtml(peer.username) + '</span>' +
+              '</div>' +
+              '<div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">' +
+                getBadgeHTML(unread) +
+                pinIconLeft +
+                '<button type="button" onclick="toggleFriendThreeDots(\'' + peer.uid + '\', event)" class="icon-btn" style="width: 30px; height: 30px;" title="Options">' +
+                  '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>' +
+                '</button>' +
+              '</div>' +
+              popupHtml +
+            '</div>'
+          );
+        }).join("");
+      }
+
+      document.getElementById("drawer-friends").style.display = "flex";
+    };
+
+    window.toggleFriendThreeDots = function(peerUid, event) {
+      if (event) event.stopPropagation();
+      if (friendMenuTimer) {
+        clearTimeout(friendMenuTimer);
+        friendMenuTimer = null;
+      }
+      if (activeFriendMenuUid === peerUid) {
+        activeFriendMenuUid = null;
+        openFriendsDrawer();
+        return;
+      }
+      activeFriendMenuUid = peerUid;
+      openFriendsDrawer();
+      friendMenuTimer = setTimeout(function() {
+        activeFriendMenuUid = null;
+        friendMenuTimer = null;
+        var drawer = document.getElementById("drawer-friends");
+        if (drawer && drawer.style.display === "flex") {
+          openFriendsDrawer();
+        }
+      }, 4000);
+    };
+
+    window.togglePinFriend = function(peerUid, event) {
+      if (event) event.stopPropagation();
+      if (friendMenuTimer) {
+        clearTimeout(friendMenuTimer);
+        friendMenuTimer = null;
+      }
+      if (!Array.isArray(currentUser.pinnedUsers)) currentUser.pinnedUsers = [];
+      var idx = currentUser.pinnedUsers.indexOf(peerUid);
+      if (idx === -1) {
+        currentUser.pinnedUsers.unshift(peerUid);
+      } else {
+        currentUser.pinnedUsers.splice(idx, 1);
+      }
+      activeFriendMenuUid = null;
+      users = users.map(function(u) { return u && u.uid === currentUser.uid ? currentUser : u; });
+      setStored(K_USERS, users);
+      setStored(K_USER, currentUser);
+      openFriendsDrawer();
+    };
+
+    window.deleteFriendChat = function(peerUid, event) {
+      if (event) event.stopPropagation();
+      if (friendMenuTimer) {
+        clearTimeout(friendMenuTimer);
+        friendMenuTimer = null;
+      }
+      if (!Array.isArray(currentUser.deletedChats)) currentUser.deletedChats = [];
+      if (currentUser.deletedChats.indexOf(peerUid) === -1) {
+        currentUser.deletedChats.push(peerUid);
+      }
+      if (Array.isArray(currentUser.pinnedUsers)) {
+        currentUser.pinnedUsers = currentUser.pinnedUsers.filter(function(id) { return id !== peerUid; });
+      }
+      messages = messages.filter(function(m) {
+        return !(m && (
+          (m.senderId === currentUser.uid && m.recipientId === peerUid) ||
+          (m.senderId === peerUid && m.recipientId === currentUser.uid)
+        ));
+      });
+      activeFriendMenuUid = null;
+      users = users.map(function(u) { return u && u.uid === currentUser.uid ? currentUser : u; });
+      setStored(K_USERS, users);
+      setStored(K_USER, currentUser);
+      setStored(K_MESSAGES, messages);
+
+      if (chatPeer && chatPeer.uid === peerUid) {
+        chatPeer = null;
+        setView("dashboard");
+      } else {
+        updateUI();
+      }
+      openFriendsDrawer();
+    };
+
+    window.closeFriendsDrawer = function() {
+      if (friendMenuTimer) {
+        clearTimeout(friendMenuTimer);
+        friendMenuTimer = null;
+      }
+      activeFriendMenuUid = null;
+      document.getElementById("drawer-friends").style.display = "none";
+    };
+
+    window.selectFriendFromDrawer = function(peerUid) {
+      var deletedList = Array.isArray(currentUser.deletedChats) ? currentUser.deletedChats : [];
+      if (deletedList.indexOf(peerUid) !== -1) return;
+      closeFriendsDrawer();
+      var peer = users.find(function(u) { return u && u.uid === peerUid; });
+      if (!peer) {
+        var prodMatch = products.find(function(p) { return p && p.userId === peerUid; });
+        peer = {
+          uid: peerUid,
+          username: prodMatch ? prodMatch.username : "User",
+          photoURL: prodMatch ? prodMatch.userPhoto : DEFAULT_AVATAR,
+          blockedUsers: []
+        };
+      }
+      openChatWithUser(peer);
+    };
+
+    // ACCOUNT PROFILE DRAWER
+    window.openProfileDrawer = function() {
+      isEditingProfile = false;
+      pendingEditAvatar = currentUser.photoURL || DEFAULT_AVATAR;
+      document.getElementById("profile-view-box").style.display = "block";
+      document.getElementById("profile-edit-box").style.display = "none";
+      document.getElementById("btn-edit-profile").style.display = "block";
+      document.getElementById("btn-save-profile").style.display = "none";
+
+      document.getElementById("profile-drawer-photo").src = currentUser.photoURL || DEFAULT_AVATAR;
+      document.getElementById("profile-drawer-name").innerText = currentUser.username;
+      document.getElementById("drawer-profile").style.display = "flex";
+    };
+
+    window.closeProfileDrawer = function() {
+      document.getElementById("drawer-profile").style.display = "none";
+    };
+
+    window.startEditingProfile = function() {
+      isEditingProfile = true;
+      pendingEditAvatar = currentUser.photoURL || DEFAULT_AVATAR;
+      document.getElementById("profile-view-box").style.display = "none";
+      document.getElementById("profile-edit-box").style.display = "block";
+      document.getElementById("btn-edit-profile").style.display = "none";
+      document.getElementById("btn-save-profile").style.display = "block";
+
+      document.getElementById("editProfilePicPreview").src = pendingEditAvatar;
+      document.getElementById("editUsernameInput").value = currentUser.username;
+    };
+
+    window.previewEditPhoto = function(event) {
+      var file = event.target.files && event.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        compressDataUrl(e.target.result, 240, 0.75, function(compressed) {
+          pendingEditAvatar = compressed;
+          document.getElementById("editProfilePicPreview").src = compressed;
+        });
+      };
+      reader.readAsDataURL(file);
+    };
+
+    window.saveProfileChanges = function() {
+      var newName = document.getElementById("editUsernameInput").value.trim();
+      if (newName.length < 2 || newName.length > 16) return;
+
+      currentUser.username = newName;
+      currentUser.photoURL = pendingEditAvatar || currentUser.photoURL;
+
+      users = users.map(function(u) { return u && u.uid === currentUser.uid ? currentUser : u; });
+      products = products.map(function(p) {
+        if (p && p.userId === currentUser.uid) {
+          p.username = currentUser.username;
+          p.userPhoto = currentUser.photoURL;
+        }
+        return p;
+      });
+
+      setStored(K_USERS, users);
+      setStored(K_USER, currentUser);
+      setStored(K_PRODUCTS, products);
+
+      openProfileDrawer();
+      updateUI();
+    };
+
+    window.resetProfileForm = function() {
+      if (isEditingProfile) {
+        startEditingProfile();
+      } else {
+        openProfileDrawer();
+      }
+    };
+
+    window.handleLogOut = function() {
+      closeProfileDrawer();
+      currentUser = null;
+      setStored(K_USER, null);
+      setAuthMode("signin");
+      updateUI();
+    };
+
+    window.handleDeleteAccount = function() {
+      closeProfileDrawer();
+      if (currentUser) {
+        users = users.filter(function(u) { return u && u.uid !== currentUser.uid; });
+        setStored(K_USERS, users);
+        currentUser = null;
+        setStored(K_USER, null);
+      }
+      setAuthMode("signin");
+      updateUI();
+    };
+
+    // CREATE PRODUCT MODAL
+    window.openCreateModal = function() {
+      pendingProdPhoto = "";
+      document.getElementById("newProdName").value = "";
+      document.getElementById("newProdPrice").value = "";
+      document.getElementById("newProdDesc").value = "";
+      document.getElementById("newProdFileInput").value = "";
+      document.getElementById("newProdPhotoPreview").style.display = "none";
+      document.getElementById("newProdPhotoText").style.display = "block";
+      document.getElementById("modal-create").style.display = "flex";
+    };
+
+    window.closeCreateModal = function() {
+      document.getElementById("modal-create").style.display = "none";
+    };
+
+    window.previewProductPhoto = function(event) {
+      var file = event.target.files && event.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        compressDataUrl(e.target.result, 520, 0.78, function(compressed) {
+          pendingProdPhoto = compressed;
+          var img = document.getElementById("newProdPhotoPreview");
+          img.src = compressed;
+          img.style.display = "block";
+          document.getElementById("newProdPhotoText").style.display = "none";
+        });
+      };
+      reader.readAsDataURL(file);
+    };
+
+    window.handleCreateProductSubmit = function(event) {
+      event.preventDefault();
+      var name = document.getElementById("newProdName").value.trim();
+      var currency = document.getElementById("newProdCurrency").value;
+      var rawPrice = document.getElementById("newProdPrice").value.trim();
+      var numPrice = Number(rawPrice);
+      var desc = document.getElementById("newProdDesc").value.trim();
+
+      if (name.length < 2 || name.length > 8 || !rawPrice || isNaN(numPrice) || numPrice < 0 || numPrice > 10000000000000 || !pendingProdPhoto) return;
+
+      var price = String(numPrice);
+
+      var prod = {
+        id: "p_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
+        name: name,
+        currency: currency,
+        price: price,
+        description: desc,
+        photoURL: pendingProdPhoto,
+        userId: currentUser.uid,
+        username: currentUser.username,
+        userPhoto: currentUser.photoURL,
+        createdAt: new Date().toISOString()
+      };
+
+      products.unshift(prod);
+      setStored(K_PRODUCTS, products);
+      closeCreateModal();
+      setView("dashboard");
+    };
+
+    // SEARCH MODAL
+    window.openSearchModal = function() {
+      document.getElementById("searchInput").value = "";
+      renderSearchResults("");
+      document.getElementById("modal-search").style.display = "flex";
+    };
+
+    window.closeSearchModal = function() {
+      document.getElementById("modal-search").style.display = "none";
+    };
+
+    window.handleSearch = function(event) {
+      renderSearchResults(event.target.value.trim().toLowerCase());
+    };
+
+    function renderSearchResults(query) {
+      var box = document.getElementById("searchResults");
+      var matches = query
+        ? products.filter(function(p) {
+            return p && (
+              (p.name && p.name.toLowerCase().indexOf(query) !== -1) ||
+              (p.description && p.description.toLowerCase().indexOf(query) !== -1) ||
+              (p.username && p.username.toLowerCase().indexOf(query) !== -1)
+            );
+          })
+        : products.slice();
+
+      if (matches.length === 0) {
+        box.innerHTML = '<p style="font-size: 13px; color: #9ca3af; text-align: center; padding: 16px;">No matching products found.</p>';
+        return;
+      }
+
+      box.innerHTML = matches.map(function(p) {
+        return (
+          '<div onclick="selectSearchProduct(\'' + p.id + '\')" style="display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 10px; border: 1px solid #f3f4f6; cursor: pointer;">' +
+            '<img src="' + p.photoURL + '" style="width: 44px; height: 44px; border-radius: 8px; object-fit: cover;" alt="Product" />' +
+            '<div style="flex: 1; min-width: 0;">' +
+              '<p class="truncate" style="font-size: 14px; font-weight: bold; color: #111827;">' + escapeHtml(p.name) + '</p>' +
+              '<p style="font-size: 12px; color: #2563eb; font-weight: bold;">' + escapeHtml(p.currency) + ' ' + escapeHtml(p.price) + '</p>' +
+            '</div>' +
+          '</div>'
+        );
+      }).join("");
+    }
+
+    window.selectSearchProduct = function(prodId) {
+      closeSearchModal();
+      openProductDetail(prodId);
+    };
+
+    // PHOTO ZOOM MODAL
+    window.openPhotoModal = function(src) {
+      if (!src) return;
+      document.getElementById("modal-photo-img").src = src;
+      document.getElementById("modal-photo").style.display = "flex";
+    };
+
+    window.closePhotoModal = function() {
+      document.getElementById("modal-photo").style.display = "none";
+      document.getElementById("modal-photo-img").src = "";
+    };
+
+    // INITIALIZE IMMEDIATELY
+    updateUI();
+  </script>
+</body>
+</html>
