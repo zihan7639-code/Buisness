@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Business Marketplace</title>
+
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+    html, body {
+      background-color: #f8f9fa;
+      color: #111827;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      width: 100%;
+      overflow-x: hidden;
+    }
+    input, button, select, textarea { font-family: inherit; font-size: inherit; }
+    .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Badges */
+    .badge-dot {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      background: #ef4444;
+      border-radius: 50%;
+      border: 1.5px solid #ffffff;
+      box-shadow: 0 0 5px rgba(239,68,68,0.8);
+      animation: pulse-dot 1.4s infinite;
+      vertical-align: middle;
+    }
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: #ef4444;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1;
+      padding: 2px 6px;
+      border-radius: 9999px;
+      border: 1.5px solid #ffffff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      vertical-align: middle;
+      animation: pulse-dot 1.4s infinite;
+    }
+    .badge-pill-dot { width: 4px; height: 4px; background: #fff; border-radius: 50%; display: inline-block; }
+    @keyframes pulse-dot { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+
+    /* Layout */
+    header {
+      position: sticky; top: 0; z-index: 40;
+      background: #ffffff; border-bottom: 1px solid #e5e7eb;
+      padding: 10px 16px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .icon-btn {
+      background: transparent; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      width: 40px; height: 40px; border-radius: 50%; color: #374151; position: relative; padding: 0;
+    }
+    .icon-btn:hover { background: #f3f4f6; }
+
+    /* Drawers & Modals */
+    .overlay {
+      position: fixed; inset: 0; z-index: 50;
+      background: rgba(0, 0, 0, 0.5); display: flex;
+    }
+    .drawer-left {
+      width: 82%; max-width: 320px; height: 100%; background: #ffffff;
+      display: flex; flex-direction: column; padding: 16px; box-shadow: 2px 0 12px rgba(0,0,0,0.15);
+    }
+    .drawer-right {
+      width: 82%; max-width: 320px; height: 100%; background: #ffffff;
+      display: flex; flex-direction: column; padding: 20px; box-shadow: -2px 0 12px rgba(0,0,0,0.15);
+    }
+    .modal-box {
+      width: 100%; max-width: 380px; background: #ffffff; border-radius: 16px;
+      padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.25); display: flex; flex-direction: column; gap: 12px;
+    }
+    .card {
+      background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px;
+      padding: 10px; cursor: pointer; display: flex; flex-direction: column; position: relative;
+    }
+    .card:hover { transform: translateY(-2px); }
+    .prod-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+    }
+    @media (min-width: 640px) { .prod-grid { grid-template-columns: repeat(4, 1fr); } }
+  </style>
+</head>
+<body>
+
+  <!-- 1. GATE -->
+  <div id="screen-gate" style="position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background: #000000; padding: 16px;">
+    <div style="width: 100%; max-width: 380px; background: #0a0a0a; border: 1px solid #22c55e; border-radius: 16px; padding: 32px 24px; text-align: center; color: #22c55e; box-shadow: 0 0 35px rgba(34,197,94,0.25);">
+      <span style="font-size: 38px; display: block; margin-bottom: 8px; color: #ef4444;">⚠</span>
+      <h1 style="font-size: 20px; font-weight: 900; color: #ef4444; letter-spacing: 2px;">SUB TO ULTRA</h1>
+      <p style="font-size: 12px; color: #fca5a5; margin-top: 6px;">Subscription Required for Access</p>
+
+      <button onclick="handleGateUnlockAndOpen()" style="width: 100%; margin-top: 24px; padding: 14px; background: rgba(239,68,68,0.15); border: 1px solid #ef4444; color: #fca5a5; font-weight: bold; font-size: 13px; letter-spacing: 2px; border-radius: 8px; cursor: pointer;">
+        [ SIGN IN TO ULTRA ]
+      </button>
+    </div>
+  </div>
+
+  <!-- 2. AUTH MODAL -->
+  <div id="screen-auth" style="position: fixed; inset: 0; z-index: 40; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.96); padding: 16px;">
+    <div style="width: 100%; max-width: 360px; background: #18181b; border: 1px solid rgba(34,197,94,0.3); border-radius: 16px; padding: 24px; text-align: center; box-shadow: 0 0 30px rgba(34,197,94,0.15);">
+      <div style="display: flex; border-bottom: 1px solid #27272a; padding-bottom: 8px; margin-bottom: 16px;">
+        <button id="tab-register" onclick="setAuthMode('register')" style="flex: 1; padding: 6px; font-size: 12px; font-weight: bold; text-transform: uppercase; border: none; background: transparent; cursor: pointer; color: #4ade80; border-bottom: 2px solid #4ade80;">Create Account</button>
+        <button id="tab-signin" onclick="setAuthMode('signin')" style="flex: 1; padding: 6px; font-size: 12px; font-weight: bold; text-transform: uppercase; border: none; background: transparent; cursor: pointer; color: #71717a;">Sign In</button>
+      </div>
+      <h2 id="auth-title" style="font-size: 16px; font-weight: bold; color: #4ade80; margin-bottom: 12px;">CREATE ACCOUNT</h2>
+
+      <div id="auth-avatar-section" style="display: block; margin-bottom: 14px;">
+        <label style="position: relative; width: 74px; height: 74px; margin: 0 auto; border-radius: 50%; background: #27272a; border: 2px solid #22c55e; overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+          <img id="authAvatarPreview" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' fill='%234ade80' viewBox='0 0 24 24'><path d='M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z'/></svg>" style="width: 100%; height: 100%; object-fit: cover;" alt="Avatar" />
+          <input type="file" accept="image/*" onchange="previewAuthAvatar(event)" style="display: none;" />
+        </label>
+        <p style="font-size: 11px; color: #a1a1aa; margin-top: 6px;">Tap circle to add photo *</p>
+      </div>
+
+      <form onsubmit="handleAuthSubmit(event)" style="display: flex; flex-direction: column; gap: 12px; text-align: left;">
+        <input id="authUsername" type="text" placeholder="Username (Unique)" required style="width: 100%; background: #000; border: 1px solid #3f3f46; border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 14px; outline: none;" />
+        <input id="authPassword" type="password" placeholder="Password" required style="width: 100%; background: #000; border: 1px solid #3f3f46; border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 14px; outline: none;" />
+        <button id="auth-submit-btn" type="submit" style="width: 100%; background: #2563eb; color: #fff; font-weight: bold; padding: 11px; border-radius: 8px; border: none; font-size: 13px; text-transform: uppercase; cursor: pointer; margin-top: 4px;">
+          Create Account
+        </button>
+      </form>
+      <div id="authError" style="font-size: 12px; color: #f87171; min-height: 18px; margin-top: 10px; font-weight: bold;"></div>
+    </div>
+  </div>
+
+  <!-- 3. MAIN DASHBOARD & APP SCREEN -->
+  <div id="screen-main" style="display: none;">
+    <header>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button onclick="openFriendsDrawer()" class="icon-btn" title="Friends">
+          <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          <span id="topbar-unread-badge" style="position: absolute; top: -3px; right: -5px; pointer-events: none;"></span>
+        </button>
+
+        <button onclick="openProfileDrawer()" style="display: flex; align-items: center; gap: 8px; background: transparent; border: none; cursor: pointer; padding-right: 8px;">
+          <img id="topbar-user-photo" src="" alt="User" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid #d1d5db;" />
+          <span id="topbar-user-name" class="truncate" style="font-size: 14px; font-weight: bold; color: #111827; max-width: 120px;"></span>
+        </button>
+        <span style="font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px; color: #9ca3af; padding-left: 6px; border-left: 1px solid #e5e7eb;">business</span>
+      </div>
+      <button onclick="openSearchModal()" class="icon-btn">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" stroke-width="2"/><path d="m21 21-4.3-4.3" stroke-width="2"/></svg>
+      </button>
+    </header>
+
+    <!-- DASHBOARD VIEW -->
+    <div id="view-dashboard" style="max-width: 980px; margin: 0 auto; padding: 24px 16px; min-height: calc(100dvh - 60px);">
+      <section style="margin-bottom: 32px;">
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
+          <h2 style="font-size: 16px; font-weight: bold; color: #1f2937;">Your</h2>
+          <svg width="16" height="16" fill="none" stroke="#6b7280" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="m9 18 6-6-6-6"/></svg>
+        </div>
+        <div style="display: flex; gap: 14px; overflow-x: auto; padding-bottom: 8px;">
+          <button onclick="openCreateModal()" style="width: 150px; height: 190px; background: #fff; border: 2px dashed #2563eb; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #2563eb; cursor: pointer; flex-shrink: 0;">
+            <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" stroke-width="2"/><path stroke-linecap="round" stroke-width="2" d="M12 8v8M8 12h8"/></svg>
+            <span style="font-size: 12px; font-weight: bold;">Create</span>
+          </button>
+          <div id="your-products-list" style="display: flex; gap: 14px;"></div>
+        </div>
+      </section>
+
+      <section>
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
+          <h2 style="font-size: 16px; font-weight: bold; color: #1f2937;">Others</h2>
+          <svg width="16" height="16" fill="none" stroke="#6b7280" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <div id="other-products-empty" style="display: none; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 36px 16px; text-align: center; font-size: 14px; color: #9ca3af;">
+          No products from other sellers yet.
+        </div>
+        <div id="other-products-grid" class="prod-grid"></div>
+      </section>
+    </div>
+
+    <!-- PRODUCT DETAIL VIEW -->
+    <div id="view-detail" style="display: none; min-height: calc(100dvh - 60px); padding: 20px 16px;">
+      <div style="max-width: 640px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 20px;">
+        <div style="display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px; margin-bottom: 16px;">
+          <button onclick="setView('dashboard')" class="icon-btn">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="m12 19-7-7 7-7M19 12H5"/></svg>
+          </button>
+          <h2 id="detail-prod-name-title" class="truncate" style="font-size: 18px; font-weight: bold; color: #111827;"></h2>
+        </div>
+        <img id="detail-prod-photo" src="" alt="Product" onclick="openPhotoModal(this.src)" style="width: 100%; max-height: 320px; object-fit: cover; border-radius: 12px; border: 1px solid #e5e7eb; cursor: zoom-in;" title="Click photo to enlarge" />
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 16px 0 8px 0;">
+          <h1 id="detail-prod-name" class="truncate" style="font-size: 22px; font-weight: bold; color: #111827;"></h1>
+          <span id="detail-prod-price" class="truncate" style="font-size: 18px; font-weight: bold; color: #2563eb; max-width: 55%;"></span>
+        </div>
+        <p id="detail-prod-desc" style="font-size: 14px; color: #4b5563; line-height: 1.5; white-space: pre-wrap; margin-bottom: 20px;"></p>
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <img id="detail-seller-photo" src="" alt="Seller" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid #d1d5db;" />
+            <div>
+              <p style="font-size: 11px; color: #6b7280;">Seller</p>
+              <p id="detail-seller-name" style="font-size: 14px; font-weight: bold; color: #111827;"></p>
+            </div>
+          </div>
+          <div id="detail-action-buttons"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPACT DIRECT CHAT VIEW -->
+    <div id="view-chat" style="display: none; height: calc(100dvh - 61px); max-height: calc(100dvh - 61px); overflow: hidden; flex-direction: column; background: #ffffff; max-width: 520px; margin: 0 auto; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid #e5e7eb; position: relative; flex-shrink: 0;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button onclick="setView('dashboard')" class="icon-btn" style="width: 34px; height: 34px;">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="m12 19-7-7 7-7M19 12H5"/></svg>
+          </button>
+          <img id="chat-recipient-photo" src="" alt="User" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid #e5e7eb;" />
+          <h3 id="chat-recipient-name" class="truncate" style="font-size: 14px; font-weight: bold; color: #111827; max-width: 220px;"></h3>
+        </div>
+        <div style="position: relative;">
+          <button onclick="toggleChatMenu()" class="icon-btn" style="width: 34px; height: 34px;">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg>
+          </button>
+          <div id="chat-menu-dropdown" style="display: none; position: absolute; right: 0; top: 38px; background: #ffffff; border: 1px solid #e5e7eb; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 10px; width: 120px; z-index: 50; overflow: hidden;">
+            <button id="chat-block-btn" onclick="toggleBlockUser()" style="width: 100%; text-align: left; padding: 9px 12px; font-size: 13px; font-weight: bold; border: none; background: transparent; cursor: pointer;">
+              Block
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="messagesStream" style="flex: 1; min-height: 0; padding: 10px 12px; overflow-y: auto; background: #f9fafb; display: flex; flex-direction: column; gap: 8px;"></div>
+      <div id="stagedMediaTray" style="display: none; padding: 6px 10px; background: #f3f4f6; border-top: 1px solid #e5e7eb; gap: 8px; overflow-x: auto; flex-shrink: 0;"></div>
+
+      <div id="chat-blocked-notice" style="display: none; padding: 12px; background: #f3f4f6; text-align: center; font-size: 13px; font-weight: bold; color: #dc2626; border-top: 1px solid #e5e7eb; flex-shrink: 0;">
+        You're Blocked
+      </div>
+
+      <div id="chat-unblock-bar" style="display: none; padding: 10px 14px; background: #f3f4f6; align-items: center; justify-content: space-between; border-top: 1px solid #e5e7eb; flex-shrink: 0;">
+        <span style="font-size: 12px; color: #4b5563;">You have blocked this user.</span>
+        <button onclick="toggleBlockUser()" style="background: transparent; border: none; color: #2563eb; font-weight: bold; font-size: 12px; cursor: pointer;">Unblock</button>
+      </div>
+
+      <form id="chat-form" onsubmit="handleSendMessage(event)" style="padding: 8px 10px; border-top: 1px solid #e5e7eb; background: #ffffff; display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+        <label class="icon-btn" style="width: 34px; height: 34px;" title="Add photos or videos">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M12 5v14M5 12h14"/></svg>
+          <input type="file" multiple accept="image/*,video/*" onchange="handleChatFiles(event)" style="display: none;" />
+        </label>
+        <input id="chatTextInput" type="text" placeholder="Type a message..." style="flex: 1; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 9999px; padding: 8px 14px; font-size: 13px; outline: none; color: #111827;" />
+        <button type="submit" style="width: 36px; height: 36px; border-radius: 50%; background: #2563eb; color: #ffffff; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3.478 2.405a.75.75 0 0 0-.926.94l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.405Z"/></svg>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. FRIENDS DRAWER -->
+  <div id="drawer-friends" class="overlay" style="display: none;" onclick="closeFriendsDrawer()">
+    <div class="drawer-left" onclick="event.stopPropagation()">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px; margin-bottom: 12px;">
+        <h2 style="font-size: 18px; font-weight: 900; color: #111827;">Friends</h2>
+        <button onclick="closeFriendsDrawer()" class="icon-btn">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="friends-list-container" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;"></div>
+    </div>
+  </div>
+
+  <!-- 5. ACCOUNT PROFILE DRAWER -->
+  <div id="drawer-profile" class="overlay" style="display: none; justify-content: flex-end;" onclick="closeProfileDrawer()">
+    <div class="drawer-right" onclick="event.stopPropagation()">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px; margin-bottom: 20px;">
+        <span style="font-size: 15px; font-weight: bold; color: #1f2937;">Account Profile</span>
+        <button onclick="closeProfileDrawer()" class="icon-btn" title="Go Back">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px;">
+        <div id="profile-view-box">
+          <img id="profile-drawer-photo" src="" alt="Profile" style="width: 88px; height: 88px; border-radius: 50%; object-fit: cover; border: 3px solid #2563eb; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" />
+          <h3 id="profile-drawer-name" style="font-size: 18px; font-weight: bold; color: #111827; margin-top: 10px;"></h3>
+        </div>
+        <div id="profile-edit-box" style="display: none; width: 100%;">
+          <label style="position: relative; width: 88px; height: 88px; margin: 0 auto; border-radius: 50%; border: 2px dashed #2563eb; overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+            <img id="editProfilePicPreview" src="" style="width: 100%; height: 100%; object-fit: cover;" alt="Preview" />
+            <input type="file" accept="image/*" onchange="previewEditPhoto(event)" style="display: none;" />
+          </label>
+          <input id="editUsernameInput" type="text" value="" style="border: 1px solid #d1d5db; border-radius: 8px; padding: 8px; font-size: 14px; text-align: center; font-weight: bold; width: 100%; margin-top: 10px; outline: none;" />
+        </div>
+        <div style="width: 100%; display: flex; flex-direction: column; gap: 10px; margin-top: 14px;">
+          <button id="btn-edit-profile" onclick="startEditingProfile()" style="width: 100%; padding: 10px; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; font-weight: 600; border-radius: 10px; cursor: pointer;">Edit Profile</button>
+          <button id="btn-save-profile" onclick="saveProfileChanges()" style="display: none; width: 100%; padding: 11px; background: #2563eb; color: #fff; font-weight: bold; border-radius: 10px; border: none; cursor: pointer;">Save Changes</button>
+          <button onclick="resetProfileForm()" style="width: 100%; padding: 10px; background: #f9fafb; color: #374151; border: 1px solid #e5e7eb; font-weight: 600; border-radius: 10px; cursor: pointer;">Reset</button>
+          <button onclick="handleLogOut()" style="width: 100%; padding: 10px; background: #f3f4f6; color: #1f2937; border: 1px solid #d1d5db; font-weight: 600; border-radius: 10px; cursor: pointer;">Log Out</button>
+          <button onclick="handleDeleteAccount()" style="width: 100%; padding: 10px; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-weight: 600; border-radius: 10px; cursor: pointer;">Delete Account</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. CREATE PRODUCT MODAL -->
+  <div id="modal-create" class="overlay" style="display: none; align-items: center; justify-content: center; padding: 16px;">
+    <form onsubmit="handleCreateProductSubmit(event)" class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px;">
+        <h2 style="font-size: 16px; font-weight: bold; color: #111827;">Create Product</h2>
+        <button type="button" onclick="closeCreateModal()" class="icon-btn">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <input id="newProdName" type="text" placeholder="Product Name (2-8 chars)" maxlength="8" required style="width: 100%; border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; font-size: 14px; outline: none;" />
+      <div style="display: flex; gap: 8px;">
+        <select id="newProdCurrency" style="border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; font-size: 14px; background: #fff;">
+          <option>$ USD</option>
+          <option>৳ TK</option>
+          <option>€ EUR</option>
+        </select>
+        <input id="newProdPrice" type="number" max="10000000000000" min="0" step="any" placeholder="Price (Max 10 Trillion)" required style="flex: 1; border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; font-size: 14px; outline: none;" />
+      </div>
+      <textarea id="newProdDesc" placeholder="Description (0-1000 chars)..." maxlength="1000" style="width: 100%; border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; font-size: 14px; height: 80px; outline: none;"></textarea>
+      <label style="border: 2px dashed #d1d5db; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; text-align: center;">
+        <img id="newProdPhotoPreview" style="height: 120px; object-fit: cover; border-radius: 8px; display: none;" alt="Preview" />
+        <span id="newProdPhotoText" style="font-size: 12px; color: #6b7280;">Click to upload product photo *</span>
+        <input id="newProdFileInput" type="file" accept="image/*" onchange="previewProductPhoto(event)" style="display: none;" required />
+      </label>
+      <button type="submit" style="width: 100%; background: #2563eb; color: #fff; font-weight: bold; padding: 11px; border-radius: 8px; border: none; font-size: 14px; cursor: pointer;">Publish Product</button>
+    </form>
+  </div>
+
+  <!-- 7. SEARCH MODAL -->
+  <div id="modal-search" class="overlay" style="display: none; align-items: center; justify-content: center; padding: 16px;">
+    <div class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-weight: bold; font-size: 15px;">Search Products</h3>
+        <button onclick="closeSearchModal()" class="icon-btn">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <input id="searchInput" type="text" oninput="handleSearch(event)" placeholder="Search products..." style="width: 100%; border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; font-size: 14px; outline: none;" />
+      <div id="searchResults" style="max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;"></div>
+    </div>
+  </div>
+
+  <!-- 8. PHOTO ZOOM MODAL -->
+  <div id="modal-photo" style="display: none; position: fixed; inset: 0; z-index: 60; align-items: center; justify-content: center; background: rgba(0,0,0,0.96); padding: 16px;" onclick="closePhotoModal()">
+    <button onclick="closePhotoModal()" style="position: absolute; top: 20px; right: 20px; width: 44px; height: 44px; background: rgba(255,255,255,0.25); color: #ffffff; border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 70;" title="Close photo">
+      <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+    <img id="modal-photo-img" src="" style="max-width: 92vw; max-height: 86vh; object-fit: contain; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);" onclick="event.stopPropagation()" alt="Enlarged" />
+  </div>
+
+  <!-- FIREBASE + APP SCRIPT ENGINE -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-analytics.js";
+    import {
+      getFirestore,
+      collection,
+      doc,
+      setDoc,
+      updateDoc,
+      deleteDoc,
+      onSnapshot,
+      writeBatch
+    } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAl6lrwDd_DbL5jINzVzC-Q_NuQXLHHiNU",
+      authDomain: "buisness-57a16.firebaseapp.com",
+      projectId: "buisness-57a16",
+      storageBucket: "buisness-57a16.firebasestorage.app",
+      messagingSenderId: "942846250014",
+      appId: "1:942846250014:web:0c333f3de02de6e8c0320f",
+      measurementId: "G-3PH1ST6L4G"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    try { getAnalytics(app); } catch (e) {}
+    const db = getFirestore(app);
+
+    const MAX_PRICE = 10000000000000; // 10 Trillion
+    const K_SUB = "biz_app_gate_unlocked_live";
+    const K_USER = "biz_app_current_user_live";
+    const K_USERS = "biz_app_registered_users_live";
+    const K_PRODUCTS = "biz_app_products_live";
+    const K_MESSAGES = "biz_app_messages_live";
+
+    const MemoryStore = {};
+    function getStored(key, fallback) {
+      try {
+        if (typeof window !== "undefined" && window.localStorage) {
+          const item = localStorage.getItem(key);
+          if (item !== null && item !== undefined) {
+            const parsed = JSON.parse(item);
+            return parsed !== null && parsed !== undefined ? parsed : fallback;
+          }
+        }
+      } catch (e) {}
+      return MemoryStore[key] !== undefined ? MemoryStore[key] : fallback;
+    }
+
+    function setStored(key, val) {
+      try {
+        if (typeof window !== "undefined" && window.localStorage) {
+          localStorage.setItem(key, JSON.stringify(val));
+        }
+      } catch (e) {}
+      MemoryStore[key] = val;
+    }
+
+    const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' fill='%232563eb' viewBox='0 0 24 24'><path d='M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z'/></svg>";
+
+    function normalizeUser(u) {
+      if (!u || !u.uid || !u.username) return null;
+      return {
+        uid: u.uid,
+        username: u.username,
+        password: u.password || "",
+        photoURL: u.photoURL || DEFAULT_AVATAR,
+        blockedUsers: Array.isArray(u.blockedUsers) ? u.blockedUsers : [],
+        pinnedUsers: Array.isArray(u.pinnedUsers) ? u.pinnedUsers : [],
+        deletedChats: Array.isArray(u.deletedChats) ? u.deletedChats : []
+      };
+    }
+
+    let users = (Array.isArray(getStored(K_USERS, [])) ? getStored(K_USERS, []) : [])
+      .map(normalizeUser)
+      .filter(Boolean);
+
+    let currentUser = normalizeUser(getStored(K_USER, null));
+    if (currentUser) {
+      const sync = users.find((u) => u.uid === currentUser.uid);
+      if (sync) currentUser = sync;
+    }
+
+    let subUnlocked = Boolean(getStored(K_SUB, false));
+    if (currentUser) {
+      subUnlocked = true;
+      setStored(K_SUB, true);
+    }
+
+    let products = Array.isArray(getStored(K_PRODUCTS, []))
+      ? getStored(K_PRODUCTS, []).filter((p) => p && p.id)
+      : [];
+
+    let messages = Array.isArray(getStored(K_MESSAGES, []))
+      ? getStored(K_MESSAGES, []).filter((m) => m && m.id)
+      : [];
+
+    let currentView = "dashboard";
+    let selectedProduct = null;
+    let chatPeer = null;
+    let authMode = "register";
+    let chatMenuOpen = false;
+    let stagedMedia = [];
+    let isEditingProfile = false;
+    let pendingAuthAvatar = null;
+    let pendingEditAvatar = null;
+    let pendingProductPhoto = null;
+    let activeFriendMenuUid = null;
+    let friendMenuTimer = null;
+
+    function formatPrice(price) {
+      const num = Number(price);
+      if (!Number.isFinite(num)) return "0";
+      return num.toLocaleString("en-US", { maximumFractionDigits: 2 });
+    }
+
+    function getBadgeHTML(count) {
+      if (!count || count <= 0) return "";
+      if (count === 1) {
+        return '<span class="badge-dot" title="1 new message"></span>';
+      }
+      const num = count > 99 ? "99+" : String(count);
+      return (
+        '<span class="badge-pill">' +
+          '<span class="badge-pill-dot"></span>' +
+          '<span>' + num + '</span>' +
+        '</span>'
+      );
+    }
+
+    // Real-time Firestore listeners
+    onSnapshot(collection(db, "users"), (snap) => {
+      const cloudUsers = [];
+      snap.forEach((d) => {
+        const u = normalizeUser({ uid: d.id, ...d.data() });
+        if (u) cloudUsers.push(u);
+      });
+      if (cloudUsers.length > 0 || !getStored(K_USERS, null)) {
+        users = cloudUsers;
+        setStored(K_USERS, users);
+        if (currentUser) {
+          const freshMe = users.find((u) => u.uid === currentUser.uid);
+          if (freshMe) {
+            currentUser = freshMe;
+            setStored(K_USER, currentUser);
+          }
+        }
+        updateUI();
+      }
+    }, (err) => console.warn("Users listener:", err.message));
+
+    onSnapshot(collection(db, "products"), (snap) => {
+      const cloudProducts = [];
+      snap.forEach((d) => {
+        const data = d.data();
+        if (data && (d.id || data.id)) {
+          cloudProducts.push({ id: d.id, ...data });
+        }
+      });
+      cloudProducts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      if (cloudProducts.length > 0 || !getStored(K_PRODUCTS, null)) {
+        products = cloudProducts;
+        setStored(K_PRODUCTS, products);
+        if (selectedProduct) {
+          const updatedProd = products.find((p) => p.id === selectedProduct.id);
+          if (updatedProd) selectedProduct = updatedProd;
+          else if (currentView === "detail") currentView = "dashboard";
+        }
+        updateUI();
+      }
+    }, (err) => console.warn("Products listener:", err.message));
+
+    onSnapshot(collection(db, "messages"), (snap) => {
+      const cloudMessages = [];
+      snap.forEach((d) => {
+        const data = d.data();
+        if (data && (d.id || data.id)) {
+          cloudMessages.push({
+            id: d.id,
+            ...data,
+            mediaItems: Array.isArray(data.mediaItems) ? data.mediaItems : []
+          });
+        }
+      });
+      cloudMessages.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+      if (cloudMessages.length > 0 || !getStored(K_MESSAGES, null)) {
+        messages = cloudMessages;
+        setStored(K_MESSAGES, messages);
+        updateUI();
+      }
+    }, (err) => console.warn("Messages listener:", err.message));
+
+    async function persistCurrentUser(updatedUser) {
+      const norm = normalizeUser(updatedUser);
+      if (!norm) return;
+      currentUser = norm;
+      setStored(K_USER, currentUser);
+      const idx = users.findIndex((u) => u.uid === norm.uid);
+      if (idx >= 0) users[idx] = norm;
+      else users.push(norm);
+      setStored(K_USERS, users);
+
+      try {
+        await setDoc(doc(db, "users", norm.uid), norm, { merge: true });
+      } catch (e) {
+        console.warn("Firestore user sync warning:", e.message);
+      }
+    }
+
+    function updateUI() {
+      const screenGate = document.getElementById("screen-gate");
+      const screenAuth = document.getElementById("screen-auth");
+      const screenMain = document.getElementById("screen-main");
+
+      if (!subUnlocked && !currentUser) {
+        screenGate.style.display = "flex";
+        screenAuth.style.display = "none";
+        screenMain.style.display = "none";
+        return;
+      }
+      screenGate.style.display = "none";
+
+      if (!currentUser) {
+        screenAuth.style.display = "flex";
+        screenMain.style.display = "none";
+        return;
+      }
+      screenAuth.style.display = "none";
+      screenMain.style.display = "block";
+
+      const deletedSet = new Set(currentUser.deletedChats || []);
+      const totalUnread = messages.filter((m) =>
+        m &&
+        m.recipientId === currentUser.uid &&
+        !m.read &&
+        !deletedSet.has(m.senderId)
+      ).length;
+
+      document.getElementById("topbar-unread-badge").innerHTML = getBadgeHTML(totalUnread);
+      document.getElementById("topbar-user-photo").src = currentUser.photoURL || DEFAULT_AVATAR;
+      document.getElementById("topbar-user-name").innerText = currentUser.username;
+
+      const viewDash = document.getElementById("view-dashboard");
+      const viewDetail = document.getElementById("view-detail");
+      const viewChat = document.getElementById("view-chat");
+
+      viewDash.style.display = "none";
+      viewDetail.style.display = "none";
+      viewChat.style.display = "none";
+
+      if (currentView === "dashboard") {
+        viewDash.style.display = "block";
+        renderDashboard();
+      } else if (currentView === "detail" && selectedProduct) {
+        viewDetail.style.display = "block";
+        renderDetail();
+      } else if (currentView === "chat" && chatPeer) {
+        viewChat.style.display = "flex";
+        renderChat();
+      }
+
+      if (document.getElementById("drawer-friends").style.display === "flex") {
+        renderFriendsDrawer();
+      }
+    }
+
+    window.setView = function(view) {
+      currentView = view;
+      chatMenuOpen = false;
+      const dd = document.getElementById("chat-menu-dropdown");
+      if (dd) dd.style.display = "none";
+      updateUI();
+    };
+
+    window.handleGateUnlockAndOpen = function() {
+      subUnlocked = true;
+      setStored(K_SUB, true);
+      updateUI();
+      try {
+        window.open("https://www.youtube.com/@Ultra-Gaming-2.O-Official", "_blank");
+      } catch (e) {}
+    };
+
+    window.setAuthMode = function(mode) {
+      authMode = mode;
+      document.getElementById("authError").innerText = "";
+      const tabReg = document.getElementById("tab-register");
+      const tabSign = document.getElementById("tab-signin");
+      const title = document.getElementById("auth-title");
+      const avatarSec = document.getElementById("auth-avatar-section");
+      const submitBtn = document.getElementById("auth-submit-btn");
+
+      if (mode === "register") {
+        tabReg.style.color = "#4ade80";
+        tabReg.style.borderBottom = "2px solid #4ade80";
+        tabSign.style.color = "#71717a";
+        tabSign.style.borderBottom = "none";
+        title.innerText = "CREATE ACCOUNT";
+        avatarSec.style.display = "block";
+        submitBtn.innerText = "Create Account";
+      } else {
+        tabSign.style.color = "#4ade80";
+        tabSign.style.borderBottom = "2px solid #4ade80";
+        tabReg.style.color = "#71717a";
+        tabReg.style.borderBottom = "none";
+        title.innerText = "ACCOUNT SIGN IN";
+        avatarSec.style.display = "none";
+        submitBtn.innerText = "Sign In & Enter";
+      }
+    };
+
+    window.previewAuthAvatar = function(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        pendingAuthAvatar = ev.target.result;
+        document.getElementById("authAvatarPreview").src = pendingAuthAvatar;
+      };
+      reader.readAsDataURL(file);
+    };
+
+    window.handleAuthSubmit = async function(e) {
+      e.preventDefault();
+      const username = document.getElementById("authUsername").value.trim();
+      const password = document.getElementById("authPassword").value.trim();
+      const errEl = document.getElementById("authError");
+      errEl.innerText = "";
+
+      if (username.length < 2) {
+        errEl.innerText = "Username must be at least 2 characters.";
+        return;
+      }
+      if (password.length < 4) {
+        errEl.innerText = "Password must be at least 4 characters.";
+        return;
+      }
+
+      if (authMode === "register") {
+        if (!pendingAuthAvatar) {
+          errEl.innerText = "Please put your profile picture.";
+          return;
+        }
+        const exists = users.find((u) => u.username.toLowerCase() === username.toLowerCase());
+        if (exists) {
+          errEl.innerText = "Username already exists. Please sign in.";
+          return;
+        }
+        const newUser = normalizeUser({
+          uid: "u_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+          username,
+          password,
+          photoURL: pendingAuthAvatar,
+          blockedUsers: [],
+          pinnedUsers: [],
+          deletedChats: []
+        });
+        await persistCurrentUser(newUser);
+        currentView = "dashboard";
+        updateUI();
+      } else {
+        const match = users.find((u) => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
+        if (!match) {
+          errEl.innerText = "Invalid username or password.";
+          return;
+        }
+        currentUser = normalizeUser(match);
+        setStored(K_USER, currentUser);
+        await persistCurrentUser(currentUser);
+        currentView = "dashboard";
+        updateUI();
+      }
+    };
+
+    function renderDashboard() {
+      const yourList = document.getElementById("your-products-list");
+      const otherGrid = document.getElementById("other-products-grid");
+      const otherEmpty = document.getElementById("other-products-empty");
+
+      const your = products.filter((p) => p && p.userId === currentUser.uid);
+      const other = products.filter((p) => p && p.userId !== currentUser.uid);
+
+      yourList.innerHTML = your.map((p) => (
+        '<div onclick="openProductDetail(\'' + p.id + '\')" class="card" style="width: 150px; height: 190px; flex-shrink: 0;">' +
+          '<img src="' + p.photoURL + '" alt="' + p.name + '" style="width: 100%; height: 110px; object-fit: cover; border-radius: 8px; background: #f3f4f6;" />' +
+          '<div style="padding-top: 8px; text-align: center;">' +
+            '<p class="truncate" style="font-size: 14px; font-weight: 600; color: #111827;">' + p.name + '</p>' +
+            '<p class="truncate" style="font-size: 12px; font-weight: bold; color: #2563eb; margin-top: 2px;">' + p.currency + ' ' + formatPrice(p.price) + '</p>' +
+          '</div>' +
+        '</div>'
+      )).join("");
+
+      if (other.length === 0) {
+        otherEmpty.style.display = "block";
+        otherGrid.innerHTML = "";
+      } else {
+        otherEmpty.style.display = "none";
+        otherGrid.innerHTML = other.map((p) => (
+          '<div onclick="openProductDetail(\'' + p.id + '\')" class="card">' +
+            '<img src="' + p.photoURL + '" alt="' + p.name + '" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; background: #f3f4f6;" />' +
+            '<div style="padding-top: 8px;">' +
+              '<p class="truncate" style="font-size: 14px; font-weight: 600; color: #111827;">' + p.name + '</p>' +
+              '<p class="truncate" style="font-size: 12px; color: #6b7280;">' + p.username + '</p>' +
+              '<p class="truncate" style="font-size: 12px; font-weight: bold; color: #2563eb; margin-top: 4px;">' + p.currency + ' ' + formatPrice(p.price) + '</p>' +
+            '</div>' +
+          '</div>'
+        )).join("");
+      }
+    }
+
+    window.openProductDetail = function(prodId) {
+      const found = products.find((p) => p && p.id === prodId);
+      if (!found) return;
+      selectedProduct = found;
+      currentView = "detail";
+      updateUI();
+    };
+
+    function renderDetail() {
+      const isOwner = selectedProduct.userId === currentUser.uid;
+      document.getElementById("detail-prod-name-title").innerText = selectedProduct.name;
+      document.getElementById("detail-prod-name").innerText = selectedProduct.name;
+      document.getElementById("detail-prod-price").innerText = selectedProduct.currency + " " + formatPrice(selectedProduct.price);
+      document.getElementById("detail-prod-desc").innerText = selectedProduct.description || "No description provided.";
+      document.getElementById("detail-prod-photo").src = selectedProduct.photoURL;
+      document.getElementById("detail-seller-photo").src = selectedProduct.userPhoto || DEFAULT_AVATAR;
+      document.getElementById("detail-seller-name").innerText = selectedProduct.username;
+
+      const btnBox = document.getElementById("detail-action-buttons");
+      if (isOwner) {
+        btnBox.innerHTML = '<button onclick="deleteProduct(\'' + selectedProduct.id + '\')" style="background: #dc2626; color: #ffffff; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer;">Delete</button>';
+      } else {
+        btnBox.innerHTML = '<button onclick="openChatFromProduct()" style="background: #2563eb; color: #ffffff; border: none; padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer;">Chat</button>';
+      }
+    }
+
+    window.deleteProduct = async function(prodId) {
+      products = products.filter((p) => p.id !== prodId);
+      setStored(K_PRODUCTS, products);
+      if (selectedProduct && selectedProduct.id === prodId) {
+        selectedProduct = null;
+        currentView = "dashboard";
+      }
+      updateUI();
+      try {
+        await deleteDoc(doc(db, "products", prodId));
+      } catch (e) {
+        console.warn("Firestore delete product warning:", e.message);
+      }
+    };
+
+    window.openChatFromProduct = async function() {
+      if (!selectedProduct || selectedProduct.userId === currentUser.uid) return;
+      const deletedSet = new Set(currentUser.deletedChats || []);
+      if (deletedSet.has(selectedProduct.userId)) {
+        const nextDeleted = (currentUser.deletedChats || []).filter((id) => id !== selectedProduct.userId);
+        await persistCurrentUser({ ...currentUser, deletedChats: nextDeleted });
+      }
+      const sellerUser = users.find((u) => u.uid === selectedProduct.userId);
+      chatPeer = sellerUser || {
+        uid: selectedProduct.userId,
+        username: selectedProduct.username,
+        photoURL: selectedProduct.userPhoto || DEFAULT_AVATAR,
+        blockedUsers: []
+      };
+      currentView = "chat";
+      await markThreadRead(chatPeer.uid);
+      updateUI();
+    };
+
+    async function markThreadRead(peerUid) {
+      let changed = false;
+      const updatedIds = [];
+      messages = messages.map((m) => {
+        if (m && m.recipientId === currentUser.uid && m.senderId === peerUid && !m.read) {
+          changed = true;
+          updatedIds.push(m.id);
+          return { ...m, read: true };
+        }
+        return m;
+      });
+      if (changed) {
+        setStored(K_MESSAGES, messages);
+        try {
+          const batch = writeBatch(db);
+          updatedIds.forEach((id) => {
+            batch.update(doc(db, "messages", id), { read: true });
+          });
+          await batch.commit();
+        } catch (e) {
+          console.warn("Firestore mark read warning:", e.message);
+        }
+      }
+    }
+
+    function renderChat() {
+      const recipient = users.find((u) => u && u.uid === chatPeer.uid) || chatPeer;
+      const isBlockedByMe = (currentUser.blockedUsers || []).includes(recipient.uid);
+      const isBlockedByThem = (recipient.blockedUsers || []).includes(currentUser.uid);
+
+      document.getElementById("chat-recipient-photo").src = recipient.photoURL || DEFAULT_AVATAR;
+      document.getElementById("chat-recipient-name").innerText = recipient.username;
+
+      const blockBtn = document.getElementById("chat-block-btn");
+      blockBtn.innerText = isBlockedByMe ? "Unblock" : "Block";
+      blockBtn.style.color = isBlockedByMe ? "#2563eb" : "#dc2626";
+
+      const blockedNotice = document.getElementById("chat-blocked-notice");
+      const unblockBar = document.getElementById("chat-unblock-bar");
+      const chatForm = document.getElementById("chat-form");
+
+      blockedNotice.style.display = "none";
+      unblockBar.style.display = "none";
+      chatForm.style.display = "none";
+
+      if (isBlockedByThem) {
+        blockedNotice.style.display = "block";
+      } else if (isBlockedByMe) {
+        unblockBar.style.display = "flex";
+      } else {
+        chatForm.style.display = "flex";
+      }
+
+      const thread = messages.filter((m) =>
+        m &&
+        ((m.senderId === currentUser.uid && m.recipientId === recipient.uid) ||
+         (m.senderId === recipient.uid && m.recipientId === currentUser.uid))
+      );
+
+      const stream = document.getElementById("messagesStream");
+      if (thread.length === 0) {
+        stream.innerHTML = '<p style="text-align: center; font-size: 12px; color: #9ca3af; margin-top: 28px;">Say hello to ' + recipient.username + '!</p>';
+      } else {
+        stream.innerHTML = thread.map((m) => {
+          const isMe = m.senderId === currentUser.uid;
+          const mediaHtml = Array.isArray(m.mediaItems) && m.mediaItems.length > 0
+            ? '<div style="display: grid; grid-template-columns: repeat(' + (m.mediaItems.length > 1 ? 2 : 1) + ', 1fr); gap: 6px; margin-bottom: ' + (m.text ? '6px' : '0') + ';">' +
+                m.mediaItems.map((item) => {
+                  if (item.type === "video") {
+                    return '<video src="' + item.url + '" controls style="width: 100%; max-height: 160px; border-radius: 8px; background: #000;"></video>';
+                  }
+                  return '<img src="' + item.url + '" onclick="openPhotoModal(this.src)" style="width: 100%; max-height: 160px; object-fit: cover; border-radius: 8px; cursor: zoom-in;" alt="Attachment" />';
+                }).join("") +
+              '</div>'
+            : "";
+          const textHtml = m.text ? '<div style="word-break: break-word;">' + m.text + '</div>' : "";
+
+          return (
+            '<div style="display: flex; justify-content: ' + (isMe ? "flex-end" : "flex-start") + ';">' +
+              '<div style="max-width: 78%; padding: 8px 12px; border-radius: 14px; font-size: 13px; ' +
+                (isMe
+                  ? "background: #2563eb; color: #ffffff; border-bottom-right-radius: 2px;"
+                  : "background: #ffffff; border: 1px solid #e5e7eb; color: #111827; border-bottom-left-radius: 2px;") + '">' +
+                mediaHtml +
+                textHtml +
+              '</div>' +
+            '</div>'
+          );
+        }).join("");
+      }
+      stream.scrollTop = stream.scrollHeight;
+      renderStagedMedia();
+    }
+
+    function renderStagedMedia() {
+      const tray = document.getElementById("stagedMediaTray");
+      if (!stagedMedia.length) {
+        tray.style.display = "none";
+        tray.innerHTML = "";
+        return;
+      }
+      tray.style.display = "flex";
+      tray.innerHTML = stagedMedia.map((item, idx) => (
+        '<div style="position: relative; width: 54px; height: 54px; flex-shrink: 0; border-radius: 8px; overflow: hidden; border: 1px solid #d1d5db;">' +
+          (item.type === "video"
+            ? '<video src="' + item.url + '" style="width: 100%; height: 100%; object-fit: cover;"></video>'
+            : '<img src="' + item.url + '" style="width: 100%; height: 100%; object-fit: cover;" alt="Staged" />') +
+          '<button type="button" onclick="removeStagedMedia(' + idx + ')" style="position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%; border: none; background: rgba(0,0,0,0.7); color: #fff; font-size: 11px; line-height: 1; cursor: pointer;">✕</button>' +
+        '</div>'
+      )).join("");
+    }
+
+    window.removeStagedMedia = function(idx) {
+      stagedMedia.splice(idx, 1);
+      renderStagedMedia();
+    };
+
+    window.handleChatFiles = function(e) {
+      const files = Array.from(e.target.files || []);
+      files.forEach((file) => {
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          stagedMedia.push({
+            type: file.type && file.type.startsWith("video/") ? "video" : "image",
+            url: ev.target.result
+          });
+          renderStagedMedia();
+        };
+        reader.readAsDataURL(file);
+      });
+      e.target.value = "";
+    };
+
+    window.handleSendMessage = async function(e) {
+      e.preventDefault();
+      if (!chatPeer || !currentUser) return;
+      const input = document.getElementById("chatTextInput");
+      const text = input.value.trim();
+      if (!text && stagedMedia.length === 0) return;
+
+      const msg = {
+        id: "m_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+        senderId: currentUser.uid,
+        recipientId: chatPeer.uid,
+        text,
+        mediaItems: stagedMedia.slice(),
+        read: false,
+        createdAt: Date.now()
+      };
+
+      input.value = "";
+      stagedMedia = [];
+      renderStagedMedia();
+
+      messages.push(msg);
+      setStored(K_MESSAGES, messages);
+      renderChat();
+
+      try {
+        await setDoc(doc(db, "messages", msg.id), msg);
+      } catch (err) {
+        console.warn("Firestore send message warning:", err.message);
+      }
+    };
+
+    window.toggleChatMenu = function() {
+      chatMenuOpen = !chatMenuOpen;
+      document.getElementById("chat-menu-dropdown").style.display = chatMenuOpen ? "block" : "none";
+    };
+
+    window.toggleBlockUser = async function() {
+      if (!chatPeer || !currentUser) return;
+      const blocked = new Set(currentUser.blockedUsers || []);
+      if (blocked.has(chatPeer.uid)) blocked.delete(chatPeer.uid);
+      else blocked.add(chatPeer.uid);
+
+      chatMenuOpen = false;
+      document.getElementById("chat-menu-dropdown").style.display = "none";
+      await persistCurrentUser({ ...currentUser, blockedUsers: Array.from(blocked) });
+      updateUI();
+    };
+
+    // Friends Drawer with 3-dots 4-second menu (Pin/Unpin & Delete)
+    window.openFriendsDrawer = function() {
+      activeFriendMenuUid = null;
+      if (friendMenuTimer) clearTimeout(friendMenuTimer);
+      document.getElementById("drawer-friends").style.display = "flex";
+      renderFriendsDrawer();
+    };
+
+    window.closeFriendsDrawer = function() {
+      activeFriendMenuUid = null;
+      if (friendMenuTimer) clearTimeout(friendMenuTimer);
+      document.getElementById("drawer-friends").style.display = "none";
+    };
+
+    window.toggleFriendActionMenu = function(uid, ev) {
+      ev.stopPropagation();
+      if (friendMenuTimer) clearTimeout(friendMenuTimer);
+      if (activeFriendMenuUid === uid) {
+        activeFriendMenuUid = null;
+      } else {
+        activeFriendMenuUid = uid;
+        friendMenuTimer = setTimeout(() => {
+          activeFriendMenuUid = null;
+          renderFriendsDrawer();
+        }, 4000);
+      }
+      renderFriendsDrawer();
+    };
+
+    window.togglePinFriend = async function(uid, ev) {
+      ev.stopPropagation();
+      if (friendMenuTimer) clearTimeout(friendMenuTimer);
+      activeFriendMenuUid = null;
+      const pinned = new Set(currentUser.pinnedUsers || []);
+      if (pinned.has(uid)) pinned.delete(uid);
+      else pinned.add(uid);
+      await persistCurrentUser({ ...currentUser, pinnedUsers: Array.from(pinned) });
+      renderFriendsDrawer();
+    };
+
+    window.deleteFriendChat = async function(uid, ev) {
+      ev.stopPropagation();
+      if (friendMenuTimer) clearTimeout(friendMenuTimer);
+      activeFriendMenuUid = null;
+      const deleted = new Set(currentUser.deletedChats || []);
+      deleted.add(uid);
+      const pinned = (currentUser.pinnedUsers || []).filter((id) => id !== uid);
+      await persistCurrentUser({
+        ...currentUser,
+        deletedChats: Array.from(deleted),
+        pinnedUsers: pinned
+      });
+      renderFriendsDrawer();
+      updateUI();
+    };
+
+    window.openFriendChatByUid = async function(uid) {
+      const friend = users.find((u) => u && u.uid === uid);
+      if (!friend) return;
+      const deletedSet = new Set(currentUser.deletedChats || []);
+      if (deletedSet.has(uid)) return;
+      chatPeer = friend;
+      currentView = "chat";
+      closeFriendsDrawer();
+      await markThreadRead(uid);
+      updateUI();
+    };
+
+    function renderFriendsDrawer() {
+      const container = document.getElementById("friends-list-container");
+      const deletedSet = new Set(currentUser.deletedChats || []);
+      const pinnedSet = new Set(currentUser.pinnedUsers || []);
+
+      const peers = users.filter((u) => u && u.uid !== currentUser.uid && !deletedSet.has(u.uid));
+      peers.sort((a, b) => {
+        const aPin = pinnedSet.has(a.uid) ? 1 : 0;
+        const bPin = pinnedSet.has(b.uid) ? 1 : 0;
+        if (aPin !== bPin) return bPin - aPin;
+        return a.username.localeCompare(b.username);
+      });
+
+      if (peers.length === 0) {
+        container.innerHTML = '<p style="text-align: center; font-size: 13px; color: #9ca3af; padding: 20px 0;">No active friend chats.</p>';
+        return;
+      }
+
+      container.innerHTML = peers.map((u) => {
+        const isPinned = pinnedSet.has(u.uid);
+        const unread = messages.filter((m) => m && m.senderId === u.uid && m.recipientId === currentUser.uid && !m.read).length;
+        const menuOpen = activeFriendMenuUid === u.uid;
+
+        return (
+          '<div onclick="openFriendChatByUid(\'' + u.uid + '\')" style="position: relative; display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 10px; border: 1px solid #f3f4f6; background: #fff; cursor: pointer;">' +
+            '<div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">' +
+              '<div style="position: relative; flex-shrink: 0;">' +
+                '<img src="' + (u.photoURL || DEFAULT_AVATAR) + '" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1px solid #e5e7eb;" alt="Friend" />' +
+                (unread > 0 ? '<span style="position: absolute; top: -2px; right: -3px;">' + getBadgeHTML(unread) + '</span>' : '') +
+              '</div>' +
+              '<span class="truncate" style="font-size: 14px; font-weight: 600; color: #111827;">' + u.username + '</span>' +
+            '</div>' +
+            '<div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">' +
+              (isPinned ? '<span title="Pinned" style="font-size: 13px; color: #2563eb;">📌</span>' : '') +
+              '<button type="button" onclick="toggleFriendActionMenu(\'' + u.uid + '\', event)" class="icon-btn" style="width: 30px; height: 30px;" title="Options">' +
+                '<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg>' +
+              '</button>' +
+            '</div>' +
+            (menuOpen
+              ? '<div onclick="event.stopPropagation()" style="position: absolute; right: 10px; top: 44px; background: #ffffff; border: 1px solid #e5e7eb; box-shadow: 0 6px 16px rgba(0,0,0,0.18); border-radius: 10px; z-index: 60; overflow: hidden; min-width: 110px;">' +
+                  '<button type="button" onclick="togglePinFriend(\'' + u.uid + '\', event)" style="display: block; width: 100%; text-align: left; padding: 8px 12px; font-size: 12px; font-weight: bold; color: #1d4ed8; background: #fff; border: none; border-bottom: 1px solid #f3f4f6; cursor: pointer;">' + (isPinned ? "Unpin" : "Pin") + '</button>' +
+                  '<button type="button" onclick="deleteFriendChat(\'' + u.uid + '\', event)" style="display: block; width: 100%; text-align: left; padding: 8px 12px; font-size: 12px; font-weight: bold; color: #dc2626; background: #fff; border: none; cursor: pointer;">Delete</button>' +
+                '</div>'
+              : '') +
+          '</div>'
+        );
+      }).join("");
+    }
+
+    // Profile Drawer
+    window.openProfileDrawer = function() {
+      isEditingProfile = false;
+      pendingEditAvatar = null;
+      document.getElementById("profile-view-box").style.display = "block";
+      document.getElementById("profile-edit-box").style.display = "none";
+      document.getElementById("btn-edit-profile").style.display = "block";
+      document.getElementById("btn-save-profile").style.display = "none";
+      document.getElementById("profile-drawer-photo").src = currentUser.photoURL || DEFAULT_AVATAR;
+      document.getElementById("profile-drawer-name").innerText = currentUser.username;
+      document.getElementById("editUsernameInput").value = currentUser.username;
+      document.getElementById("editProfilePicPreview").src = currentUser.photoURL || DEFAULT_AVATAR;
+      document.getElementById("drawer-profile").style.display = "flex";
+    };
+
+    window.closeProfileDrawer = function() {
+      document.getElementById("drawer-profile").style.display = "none";
+    };
+
+    window.startEditingProfile = function() {
+      isEditingProfile = true;
+      document.getElementById("profile-view-box").style.display = "none";
+      document.getElementById("profile-edit-box").style.display = "block";
+      document.getElementById("btn-edit-profile").style.display = "none";
+      document.getElementById("btn-save-profile").style.display = "block";
+    };
+
+    window.previewEditPhoto = function(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        pendingEditAvatar = ev.target.result;
+        document.getElementById("editProfilePicPreview").src = pendingEditAvatar;
+      };
+      reader.readAsDataURL(file);
+    };
+
+    window.saveProfileChanges = async function() {
+      const nextName = document.getElementById("editUsernameInput").value.trim();
+      if (nextName.length < 2) return;
+      await persistCurrentUser({
+        ...currentUser,
+        username: nextName,
+        photoURL: pendingEditAvatar || currentUser.photoURL
+      });
+      openProfileDrawer();
+      updateUI();
+    };
+
+    window.resetProfileForm = function() {
+      pendingEditAvatar = null;
+      document.getElementById("editUsernameInput").value = currentUser.username;
+      document.getElementById("editProfilePicPreview").src = currentUser.photoURL || DEFAULT_AVATAR;
+    };
+
+    window.handleLogOut = function() {
+      currentUser = null;
+      setStored(K_USER, null);
+      closeProfileDrawer();
+      setAuthMode("signin");
+      updateUI();
+    };
+
+    window.handleDeleteAccount = async function() {
+      if (!currentUser) return;
+      const uid = currentUser.uid;
+      users = users.filter((u) => u.uid !== uid);
+      setStored(K_USERS, users);
+      currentUser = null;
+      setStored(K_USER, null);
+      closeProfileDrawer();
+      setAuthMode("register");
+      updateUI();
+      try {
+        await deleteDoc(doc(db, "users", uid));
+      } catch (e) {
+        console.warn("Firestore delete account warning:", e.message);
+      }
+    };
+
+    // Create Product Modal
+    window.openCreateModal = function() {
+      pendingProductPhoto = null;
+      document.getElementById("newProdName").value = "";
+      document.getElementById("newProdPrice").value = "";
+      document.getElementById("newProdDesc").value = "";
+      document.getElementById("newProdFileInput").value = "";
+      document.getElementById("newProdPhotoPreview").style.display = "none";
+      document.getElementById("newProdPhotoText").style.display = "block";
+      document.getElementById("modal-create").style.display = "flex";
+    };
+
+    window.closeCreateModal = function() {
+      document.getElementById("modal-create").style.display = "none";
+    };
+
+    window.previewProductPhoto = function(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        pendingProductPhoto = ev.target.result;
+        const img = document.getElementById("newProdPhotoPreview");
+        img.src = pendingProductPhoto;
+        img.style.display = "block";
+        document.getElementById("newProdPhotoText").style.display = "none";
+      };
+      reader.readAsDataURL(file);
+    };
+
+    window.handleCreateProductSubmit = async function(e) {
+      e.preventDefault();
+      const name = document.getElementById("newProdName").value.trim();
+      const currency = document.getElementById("newProdCurrency").value;
+      const rawPrice = Number(document.getElementById("newProdPrice").value);
+      const description = document.getElementById("newProdDesc").value.trim().slice(0, 1000);
+
+      if (name.length < 2 || name.length > 8) return;
+      if (!Number.isFinite(rawPrice) || rawPrice < 0 || rawPrice > MAX_PRICE) return;
+      if (!pendingProductPhoto) return;
+
+      const prod = {
+        id: "p_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+        userId: currentUser.uid,
+        username: currentUser.username,
+        userPhoto: currentUser.photoURL || DEFAULT_AVATAR,
+        name,
+        currency,
+        price: rawPrice,
+        description,
+        photoURL: pendingProductPhoto,
+        createdAt: Date.now()
+      };
+
+      products.unshift(prod);
+      setStored(K_PRODUCTS, products);
+      closeCreateModal();
+      updateUI();
+
+      try {
+        await setDoc(doc(db, "products", prod.id), prod);
+      } catch (err) {
+        console.warn("Firestore create product warning:", err.message);
+      }
+    };
+
+    // Search Modal
+    window.openSearchModal = function() {
+      document.getElementById("searchInput").value = "";
+      renderSearchResults("");
+      document.getElementById("modal-search").style.display = "flex";
+    };
+
+    window.closeSearchModal = function() {
+      document.getElementById("modal-search").style.display = "none";
+    };
+
+    window.handleSearch = function(e) {
+      renderSearchResults(e.target.value || "");
+    };
+
+    function renderSearchResults(query) {
+      const q = query.trim().toLowerCase();
+      const box = document.getElementById("searchResults");
+      const matches = products.filter((p) => {
+        if (!p) return false;
+        if (!q) return true;
+        return (
+          (p.name && p.name.toLowerCase().includes(q)) ||
+          (p.description && p.description.toLowerCase().includes(q)) ||
+          (p.username && p.username.toLowerCase().includes(q))
+        );
+      });
+
+      if (matches.length === 0) {
+        box.innerHTML = '<p style="text-align: center; font-size: 13px; color: #9ca3af; padding: 12px;">No matching products found.</p>';
+        return;
+      }
+
+      box.innerHTML = matches.map((p) => (
+        '<div onclick="selectSearchProduct(\'' + p.id + '\')" style="display: flex; align-items: center; gap: 10px; padding: 8px; border: 1px solid #e5e7eb; border-radius: 10px; cursor: pointer;">' +
+          '<img src="' + p.photoURL + '" style="width: 44px; height: 44px; border-radius: 8px; object-fit: cover; flex-shrink: 0;" alt="Prod" />' +
+          '<div style="min-width: 0; flex: 1;">' +
+            '<p class="truncate" style="font-size: 13px; font-weight: 700; color: #111827;">' + p.name + '</p>' +
+            '<p class="truncate" style="font-size: 11px; color: #6b7280;">by ' + p.username + '</p>' +
+          '</div>' +
+          '<span style="font-size: 12px; font-weight: 700; color: #2563eb; flex-shrink: 0;">' + p.currency + ' ' + formatPrice(p.price) + '</span>' +
+        '</div>'
+      )).join("");
+    }
+
+    window.selectSearchProduct = function(prodId) {
+      closeSearchModal();
+      openProductDetail(prodId);
+    };
+
+    // Photo Zoom Modal
+    window.openPhotoModal = function(src) {
+      if (!src) return;
+      document.getElementById("modal-photo-img").src = src;
+      document.getElementById("modal-photo").style.display = "flex";
+    };
+
+    window.closePhotoModal = function() {
+      document.getElementById("modal-photo").style.display = "none";
+    };
+
+    // Initial render
+    updateUI();
+  </script>
+</body>
+</html>
